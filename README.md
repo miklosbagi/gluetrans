@@ -2,6 +2,8 @@
 The Glue between Gluetun, Transmission and PIA-VPN.  
 This is docker image that checks gluetun's PIAVPN Peer Port periodically, and updates Transmission when it changes. The idea is to run this as a third container between thess two.
 
+## Please note that this is not fully operational yet, it's a work in progress.
+
 ## Environment variables
 Mandatory:
 - `GLUETUN_CONTROL_ENDPOINT`: Full Control Server URL with port, e.g.: `http://gluetun:8000`
@@ -39,7 +41,7 @@ docker run \
 -e TRANSMISSION_ENDPOINT=http://transmission:9091/transmission/rpc \
 -e TRANSMISSION_USER=transmission \
 -e TRANSMISSION_PASS=transmission \
-miklosbagi/gluetranspia:latest
+miklosbagi/gluetranspia:dev
 ```
 
 ## Docker build for local testing
@@ -59,7 +61,7 @@ gluetranspia:local
 
 ## Docker-compose example with gluetun + transmission
 Please note that `data` directory will be created if this gets executed as is.
-Also, please note the version lock-in for this example - this is known to work as below, binding to :latest is like a weather report.
+Also, please note that we test against versions, not :latest, as that's like a weather report.
 
 ```
 services:
@@ -97,7 +99,7 @@ services:
       - gluetun
 
   gluetranspia:
-    image: miklosbagi/gluetranspia
+    image: miklosbagi/gluetranspia:dev
     environment:
       GLUETUN_CONTROL_ENDPOINT: http://localhost:8000
       GLUETUN_HEALTH_ENDPOINT: http://localhost:9999
