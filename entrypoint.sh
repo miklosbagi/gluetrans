@@ -22,8 +22,6 @@ STANDARD_WAIT_TIME=${STANDARD_WAIT_TIME:-5}
 FORCED_COUNTRY_JUMP=${FORCED_COUNTRY_JUMP:-0}
 FORCE_JUMP_INTERVAL=$((FORCED_COUNTRY_JUMP * 60))
 
-GLUETUN_PORT_FORWARD_FILE=${GLUETUN_PORT_FORWARD_FILE:-"/gluetun/piaportforward.json"}
-
 # constants
 tag="gtpia"
 country_jump_timer=0
@@ -130,21 +128,6 @@ while true; do
     
     # get gluetun port, and handle too many failures
     gluetun_port=$(get_gluetun_port) && gluetun_port_fail_count=0
-
-    # if we are half way through, let's see if we can reuse a previously acquired port
-    if [ -z "$gluetun_port" ]; then 
-        if [ "$gluetun_port_fail_count" == "$(( $GLUETUN_PICK_NEW_SERVER_AFTER / 2 ))" ]; then
-            log "gluetun port check failed $gluetun_port_fail_count times, let's see if we can do this use a previously acquired port."
-            if [ -f "$GLUETUN_PORT_FORWARD_FILE" ]; then
-                log "found $GLUETUN_PORT_FORWARD_FILE, using it."
-                gluetun_port=$(jq -r '.port' "$GLUETUN_PORT_FORWARD_FILE")
-            else
-                log "no gluetun port forward file $GLUETUN_PORT_FORWARD_FILE was found, continuing with gluetun port checks."
-            fi
-        fi
-        gluetun_port_fail_count=$((gluetun_port_fail_count + 1)); 
-        continue; 
-    fi
 
     # get gluetun port, and handle too many failures
     if [ -z "$gluetun_port" ]; then 
