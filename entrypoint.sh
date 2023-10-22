@@ -144,7 +144,6 @@ while true; do
         transmission_port_fail_count=$((transmission_port_fail_count + 1)); 
         continue; 
     fi
-
     
     # increment country jump timer
     country_jump_timer=$((country_jump_timer + PEERPORT_CHECK_INTERVAL))
