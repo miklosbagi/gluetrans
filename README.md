@@ -1,9 +1,16 @@
 # GlueTransPIA Peer Port updater
-The Glue between Gluetun, Transmission and PIA-VPN.  
-This is docker image that checks gluetun's PIAVPN Peer Port periodically, and updates Transmission when it changes. The idea is to run this as a third container between thess two.
+Gluetun / PIA (Private Internet Access) VPN Peer Port updater for Transmission.
 
-## Please note that this is not fully operational yet, it's a work in progress.
+## What does it do?
+1. Waits for gluetun to report healthy
+1. Checks gluetun's PIAVPN Peer Port (via control server), and keep trying until it gets a valid port
+   1. If port can't be retrieved in x tries, it insrtucts gluetun to pick a new server.
+1. Checks Transmission's current Peer Port
+   1. If transmission port can't be retrieved in x tries, it instructs gluetun to pick a new server.
+1. If there is a difference between the two ports, it instructs Transmission to update its Peer Port.
+1. Tests that transmission peer port is open, and updates it when things go sideways.
 
+It keeps trying until you have a valid peer port.
 ## Environment variables
 Mandatory:
 - `GLUETUN_CONTROL_ENDPOINT`: Full Control Server URL with port, e.g.: `http://gluetun:8000`
@@ -41,7 +48,7 @@ docker run \
 -e TRANSMISSION_ENDPOINT=http://transmission:9091/transmission/rpc \
 -e TRANSMISSION_USER=transmission \
 -e TRANSMISSION_PASS=transmission \
-miklosbagi/gluetranspia:dev
+miklosbagi/gluetranspia:latest
 ```
 
 ## Docker build for local testing
@@ -99,7 +106,7 @@ services:
       - gluetun
 
   gluetranspia:
-    image: miklosbagi/gluetranspia:dev
+    image: miklosbagi/gluetranspia
     environment:
       GLUETUN_CONTROL_ENDPOINT: http://localhost:8000
       GLUETUN_HEALTH_ENDPOINT: http://localhost:9999
@@ -115,6 +122,43 @@ services:
 
 ## Debug
 `docker logs -f gluetranspia` should reveal what's happening.
+
+### Ideal scenario
+```
+GlueTransPIA starting...
+Oct 10 10:10:11 [gtpia] waiting for gluetun to become active...
+Oct 10 10:10:17 [gtpia] gluetun is active, country details: "123.123.1.12,UK,Belgrade,CODE Test DataCenterHost Inc."
+Oct 10 10:10:17 [gtpia] monitoring...
+Oct 10 10:10:47 [gtpia] gluetun returned {"port":0}, retrying (1 / 15)...
+Oct 10 10:11:17 [gtpia] tramsmission returned '', retrying (1/15)...
+Oct 10 10:11:47 [gtpia] tramsmission returned '', retrying (2/15)...
+Oct 10 10:12:18 [gtpia] tramsmission returned '', retrying (3/15)...
+Oct 10 10:12:48 [gtpia] port change detected: gluetun is 12345, transmission is 0, updating...
+Oct 10 10:12:54 [gtpia] success: transmission port updated successfully.
+Oct 10 10:13:24 [gtpia] heartbeat: gluetun & transmission ports match (12345), Port is open: Yes
+```
+Please note that this data is sanitized.
+
+### Self-healing scenario
+```
+GlueTransPIA starting...
+Oct 10 10:10:11 [gtpia] waiting for gluetun to become active...
+Oct 10 10:10:17 [gtpia] gluetun is active, country details: "123.123.1.12,UK,Belgrade,CODE Test DataCenterHost Inc."
+Oct 10 10:10:17 [gtpia] monitoring...
+Oct 10 10:10:47 [gtpia] gluetun returned {"port":0}, retrying (1 / 15)...
+Oct 10 10:11:17 [gtpia] tramsmission returned '', retrying (1/15)...
+Oct 10 10:11:47 [gtpia] tramsmission returned '', retrying (2/15)...
+...
+Oct 10 10:14:38 [gtpia] gluetun returned {"port":0}, retrying (15 / 15)...
+Oct 10 10:11:38 [gtpia] gluetun port check failed 15 times, instructing gluetun to pick a new server.
+Oct 10 10:15:17 [gtpia] gluetun is active, country details: "123.123.1.12,UK,Berlin,CODE Test DataCenterHost Inc."
+Oct 10 10:15:47 [gtpia] gluetun returned {"port":0}, retrying (1 / 15)...
+Oct 10 10:16:48 [gtpia] port change detected: gluetun is 12345, transmission is 0, updating...
+Oct 10 10:16:54 [gtpia] success: transmission port updated successfully.
+Oct 10 10:17:24 [gtpia] heartbeat: gluetun & transmission ports match (12345), Port is open: Yes
+...
+```
+Please note that this data is sanitized.
 
 ## Known issues
 - Transmission w/o RPC auth is not supported
