@@ -162,16 +162,16 @@ while true; do
         update_transmission_port "$gluetun_port"
 
         # wait for transmission port to update
-        count=0
-        while [ "$count" -lt 5 ]; do
+        attempt=0
+        while [ "$attempt" -lt 5 ]; do
             sleep $STANDARD_WAIT_TIME
             is_open=$(check_transmission_port_open)
             if [ "$is_open" == "Port is open: Yes" ]; then
                 break
             fi
-            log "waiting for transmission port to update ($count/5)..."
+            log "waiting for transmission port to update ($attempt/5)..."
             update_transmission_port "$gluetun_port"
-            count=$((count + 1))
+            attempt=$((attempt + 1))
         done
 
         # check if transmission port updated successfully
