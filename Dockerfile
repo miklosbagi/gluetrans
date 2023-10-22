@@ -18,5 +18,5 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Run the script when the container starts
-CMD ["sh", "-c", "echo 'GlueTransPIA starting...'; /entrypoint.sh"]
+CMD ["sh", "-c", "echo 'GlueTransPIA starting...'; sleep 15; /entrypoint.sh"]
 # CMD ["sleep", "3600"]
