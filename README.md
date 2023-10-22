@@ -20,8 +20,9 @@ Mandatory:
 - `TRANSMISSION_PASS`: Password for transmission RPC auth
 
 Optional:
-- `PEERPORT_CHECK_INTERVAL`: 30 # optional, default: 15, in seconds
-- `GLUETUN_PICK_NEW_SERVER_AFTER`: 15 # optional, default: 10, in number of retries
+- `PEERPORT_CHECK_INTERVAL`: how often peer port should be validated. Default: 15, in seconds
+- `GLUETUN_PICK_NEW_SERVER_AFTER`: pick a new server after X number of failures in detecting a working peer port. Default: 10, in number of retries.
+- `FORCED_COUNTRY_JUMP`: jump to a new country every X minutes. Default: 0 (means: disabled). Example: 120 (jump to new country every 2 hours)
 
 ## Vanilla usage
 Export the necessary variables, for example:
@@ -115,6 +116,7 @@ services:
       TRANSMISSION_PASS: My Transmission Password
       PEERPORT_CHECK_INTERVAL: 30 # optional, default: 15, in seconds
       GLUETUN_PICK_NEW_SERVER_AFTER: 15 # optional, default: 10, in number of retries
+      FORCED_COUNTRY_JUMP: 0 # optional, default: 0 (means: disabled). Example: 120 (jump to new country every 2 hours)
     network_mode: "service:gluetun" # go through gluetun's VPN
     depends_on:
       - gluetun
@@ -135,6 +137,7 @@ Oct 10 10:11:47 [gtpia] tramsmission returned '', retrying (2/15)...
 Oct 10 10:12:18 [gtpia] tramsmission returned '', retrying (3/15)...
 Oct 10 10:12:48 [gtpia] port change detected: gluetun is 12345, transmission is 0, updating...
 Oct 10 10:12:54 [gtpia] success: transmission port updated successfully.
+Oct 10 10:13:23 [gtpia] country jump timer: 14 minutes left on this server.
 Oct 10 10:13:24 [gtpia] heartbeat: gluetun & transmission ports match (12345), Port is open: Yes
 ```
 Please note that this data is sanitized.
@@ -155,6 +158,7 @@ Oct 10 10:15:17 [gtpia] gluetun is active, country details: "123.123.1.12,UK,Ber
 Oct 10 10:15:47 [gtpia] gluetun returned {"port":0}, retrying (1 / 15)...
 Oct 10 10:16:48 [gtpia] port change detected: gluetun is 12345, transmission is 0, updating...
 Oct 10 10:16:54 [gtpia] success: transmission port updated successfully.
+Oct 10 10:17:23 [gtpia] country jump timer: 14 minutes left on this server.
 Oct 10 10:17:24 [gtpia] heartbeat: gluetun & transmission ports match (12345), Port is open: Yes
 ...
 ```
@@ -162,3 +166,4 @@ Please note that this data is sanitized.
 
 ## Known issues
 - Transmission w/o RPC auth is not supported
+- If you see that the thirs server you'd expect is still not returning a valid peer port, please check the logs of gluetun, as it might be that the server is not healthy, or the port is not open. If it keeps returning 0 as port, please stop and start it again, there is a known bug

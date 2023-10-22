@@ -22,6 +22,8 @@ STANDARD_WAIT_TIME=${STANDARD_WAIT_TIME:-5}
 FORCED_COUNTRY_JUMP=${FORCED_COUNTRY_JUMP:-0}
 FORCE_JUMP_INTERVAL=$((FORCED_COUNTRY_JUMP * 60))
 
+GLUETUN_PORT_FORWARD_FILE=${GLUETUN_PORT_FORWARD_FILE:-"/gluetun/piaportforward.json"}
+
 # constants
 tag="gtpia"
 country_jump_timer=0
@@ -44,7 +46,13 @@ log () {
 
 # get current connection country
 get_connection_country() {
-    curl -s http://ipinfo.io|jq '.ip+","+.country+","+.city+","+.org' || echo "unknown"
+    country=$(curl -s http://ipinfo.io | jq '.country' 2>&1)
+    if [[ $country == *"parse error"* ]]; then
+        log "Error occurred while fetching the country: $country"
+        echo "unknown"
+    else
+        echo "$country"
+    fi
 }
 
 # wait for gluetun to become healthy
@@ -122,6 +130,23 @@ while true; do
     
     # get gluetun port, and handle too many failures
     gluetun_port=$(get_gluetun_port) && gluetun_port_fail_count=0
+
+    # if we are half way through, let's see if we can reuse a previously acquired port
+    if [ -z "$gluetun_port" ]; then 
+        if [ "$gluetun_port_fail_count" == "$(( $GLUETUN_PICK_NEW_SERVER_AFTER / 2 ))" ]; then
+            log "gluetun port check failed $gluetun_port_fail_count times, let's see if we can do this use a previously acquired port."
+            if [ -f "$GLUETUN_PORT_FORWARD_FILE" ]; then
+                log "found $GLUETUN_PORT_FORWARD_FILE, using it."
+                gluetun_port=$(jq -r '.port' "$GLUETUN_PORT_FORWARD_FILE")
+            else
+                log "no gluetun port forward file $GLUETUN_PORT_FORWARD_FILE was found, continuing with gluetun port checks."
+            fi
+        fi
+        gluetun_port_fail_count=$((gluetun_port_fail_count + 1)); 
+        continue; 
+    fi
+
+    # get gluetun port, and handle too many failures
     if [ -z "$gluetun_port" ]; then 
         if [ "$gluetun_port_fail_count" == "$GLUETUN_PICK_NEW_SERVER_AFTER" ]; then
             log "gluetun port check failed $GLUETUN_PICK_NEW_SERVER_AFTER times, instructing gluetun to pick a new server."
@@ -144,16 +169,19 @@ while true; do
         transmission_port_fail_count=$((transmission_port_fail_count + 1)); 
         continue; 
     fi
-    
-    # increment country jump timer
-    country_jump_timer=$((country_jump_timer + PEERPORT_CHECK_INTERVAL))
-    log "country jump timer: $country_jump_timer / $FORCE_JUMP_INTERVAL"
+
     # check if forced country jump is needed
-    if [[ $FORCED_COUNTRY_JUMP -ne 0 && $country_jump_timer -ge $FORCE_JUMP_INTERVAL ]]; then
-        log "country-jump: forcing gluetun to pick a new server after $FORCED_COUNTRY_JUMP minutes."
-        pick_new_gluetun_server
-        country_jump_timer=0
-        continue;
+    if [[ $FORCED_COUNTRY_JUMP -ne 0 ]]; then
+        # increment country jump timer
+        country_jump_timer=$((country_jump_timer + PEERPORT_CHECK_INTERVAL))
+        log "country jump timer: $(( ($FORCE_JUMP_INTERVAL - $country_jump_timer) / 60 )) minute(s) left on this server."
+
+        if [[ $country_jump_timer -ge $FORCE_JUMP_INTERVAL ]]; then
+            log "country-jump: forcing gluetun to pick a new server after $FORCED_COUNTRY_JUMP minutes."
+            pick_new_gluetun_server
+            country_jump_timer=0
+            continue;
+        fi
     fi
 
     # check for port change, and instruct transmission to pick enanble new port
