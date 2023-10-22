@@ -99,17 +99,16 @@ services:
       USER: My Transmission Username
       PASS: My Transmission Password
       #PEERPORT: # this is what we do here, so skip it.
-
     volumes:
       - ./data/transmission:/config
-      - ./data/transmissino_downloads:/downloads
+      - ./data/transmission_downloads:/downloads
     network_mode: "service:gluetun" # go through gluetun's VPN
     restart: unless-stopped
     depends_on:
       - gluetun
 
   gluetranspia:
-    image: miklosbagi/gluetranspia
+    image: miklosbagi/gluetranspia:latest
     environment:
       GLUETUN_CONTROL_ENDPOINT: http://localhost:8000
       GLUETUN_HEALTH_ENDPOINT: http://localhost:9999
