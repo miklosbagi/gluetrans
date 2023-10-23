@@ -8,19 +8,27 @@ DOCKER_BUILD_CMD := docker buildx build --platform linux/amd64,linux/arm64
 build:
 	${DOCKER_BUILD_CMD} .
 
-release-dev:
+test: lint
+
+lint: 
+	shellcheck entrypoint.sh || (echo "Linting failed, exiting." && exit 1)
+
+release-dev: test
 	${DOCKER_BUILD_CMD} -t ${DOCKER_REPO}:dev --push .
+	docker pull ${DOCKER_REPO}:dev
 	docker tag ${DOCKER_REPO}:dev ${GHCR_REPO}:dev
 	docker push ${GHCR_REPO}:dev
 
-release-latest:
+release-latest: test
 	${DOCKER_BUILD_CMD} -t ${DOCKER_REPO}:latest --push .
+	docker pull ${DOCKER_REPO}:latest
 	docker tag ${DOCKER_REPO}:latest ${GHCR_REPO}:latest
 	docker push ${GHCR_REPO}:latest
 
-release-version:
+release-version: test
 ifdef VERSION
 	${DOCKER_BUILD_CMD} -t $(DOCKER_REPO):$(VERSION) --push .
+        docker pull ${DOCKER_REPO}:${VERSION}
 	docker tag $(DOCKER_REPO):$(VERSION) ${GHCR_REPO}:${VERSION}
 	docker push ${GHCR_REPO}:${VERSION}
 else
