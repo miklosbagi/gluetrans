@@ -15,16 +15,17 @@ Gluetun / PIA (Private Internet Access) VPN Peer Port updater for Transmission.
 It keeps trying until you have a valid peer port.
 ## Environment variables
 Mandatory:
-- `GLUETUN_CONTROL_ENDPOINT`: Full Control Server URL with port, e.g.: `http://gluetun:8000`
-- `GLUETUN_HEALTH_ENDPOINT`: Full Health URL with port, `http://gluetun:9999` by default
-- `TRANSMISSION_ENDPOINT` : Full Transmission RPC URL with port, service path, e.g.: `http://transmission:9091/transmission/rpc`
-- `TRANSMISSION_USER`: Username for transmission RPC auth
-- `TRANSMISSION_PASS`: Password for transmission RPC auth
+- `GLUETUN_CONTROL_ENDPOINT`: Full Control Server URL with port, e.g.: `http://gluetun:8000`.
+- `GLUETUN_HEALTH_ENDPOINT`: Full Health URL with port, `http://gluetun:9999` by default.
+- `TRANSMISSION_ENDPOINT` : Full Transmission RPC URL with port, service path, e.g.: `http://transmission:9091/transmission/rpc`.
+- `TRANSMISSION_USER`: Username for transmission RPC auth.
+- `TRANSMISSION_PASS`: Password for transmission RPC auth.
 
 Optional:
-- `PEERPORT_CHECK_INTERVAL`: how often peer port should be validated. Default: 15, in seconds
+- `PEERPORT_CHECK_INTERVAL`: how often peer port should be validated. Default: 15, in seconds.
 - `GLUETUN_PICK_NEW_SERVER_AFTER`: pick a new server after X number of failures in detecting a working peer port. Default: 10, in number of retries.
-- `FORCED_COUNTRY_JUMP`: jump to a new country every X minutes. Default: 0 (means: disabled). Example: 120 (jump to new country every 2 hours)
+- `FORCED_COUNTRY_JUMP`: jump to a new country every X minutes. Default: 0 (means: disabled). Example: 120 (jump to new country every 2 hours).
+- `SANITIZE_LOGS`: sanitize logs. Default: 0 (means disabled). Set to 1 to omit potentially sensitive information from logs.
 
 ## Vanilla usage
 Export the necessary variables, for example:
