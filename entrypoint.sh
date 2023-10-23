@@ -22,6 +22,9 @@ STANDARD_WAIT_TIME=${STANDARD_WAIT_TIME:-5}
 FORCED_COUNTRY_JUMP=${FORCED_COUNTRY_JUMP:-0}
 FORCE_JUMP_INTERVAL=$((FORCED_COUNTRY_JUMP * 60))
 
+# For secure run
+SANITIZE_LOGS=${SANITIZE_LOGS:-0}
+
 # constants
 tag="gtpia"
 country_jump_timer=0
@@ -39,7 +42,12 @@ required_vars=(
 # general logging to stdout (docker friendly)
 log () {
     stamp=$(date +"%b %d %H:%M:%S")
-    echo "$stamp [$tag] $1" >> /proc/1/fd/1
+    # handle log sanitization
+    if [[ "$SANITIZE_LOGS" -ne 0 ]] && [[ "$2" != "" ]]; then
+        echo "$stamp [$tag] $1" | sed -E "$2" >> /proc/1/fd/1
+    else
+        echo "$stamp [$tag] $1" >> /proc/1/fd/1
+    fi
 }
 
 # get current connection country
@@ -53,6 +61,11 @@ get_connection_country() {
     fi
 }
 
+# hash sensitive info
+hash_sensitive_info() {
+    echo "${RANDOM}${1}${RANDOM}" | sha256sum | awk '{print $1}'
+}
+
 # wait for gluetun to become healthy
 wait_for_gluetun() {
     until curl -s -m "$STANDARD_WAIT_TIME" -o /dev/null -w "%{http_code}" "$GLUETUN_HEALTH_ENDPOINT" | grep -q 200; do
@@ -60,7 +73,8 @@ wait_for_gluetun() {
         sleep "$STANDARD_WAIT_TIME"
     done
     country_details=$(get_connection_country)
-    log "gluetun is active, country details: $country_details"
+    hashed_country_details=$(hash_sensitive_info "$country_details")
+    log "gluetun is active, country details: $country_details", "s#$country_details#$hashed_country_details#"
 }
 
 # get transmission peer port
@@ -98,7 +112,7 @@ check_transmission_port_open() {
 
 # pick a new gluetun server
 pick_new_gluetun_server() {
-    log "asking gluetun to disconnect from $country_details"
+    log "asking gluetun to disconnect from $country_details", "s#$country_details#* OMITTED *#"
     gluetun_server_response=$(curl -s -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
     if [ "$gluetun_server_response" != '{"outcome":"stopped"}' ]; then
         log "bleh, gluetun server response is weird, expected {\"outcome\":\"stopped\"}, got $gluetun_server_response"
@@ -160,7 +174,7 @@ while true; do
         log "country jump timer: $(( (FORCE_JUMP_INTERVAL - country_jump_timer) / 60 )) minute(s) left on this server."
 
         if [[ $country_jump_timer -ge $FORCE_JUMP_INTERVAL ]]; then
-            log "country-jump: forcing gluetun to pick a new server after $FORCED_COUNTRY_JUMP minutes."
+            log "countryjump: forcing gluetun to pick a new server after $FORCED_COUNTRY_JUMP minute(s)."
             pick_new_gluetun_server
             country_jump_timer=0
             continue;
@@ -169,7 +183,7 @@ while true; do
 
     # check for port change, and instruct transmission to pick enanble new port
     if [ "$gluetun_port" != "$transmission_port" ] || [ "$is_open" != "Port is open: Yes" ]; then
-        log "port change detected: gluetun is $gluetun_port, transmission is $transmission_port, updating..."
+        log "port change detected: gluetun is $gluetun_port, transmission is $transmission_port, $is_open updating..." "s#$gluetun_port, transmission is $transmission_port#* OMITTED *, transmission is * OMITTED *#"
         update_transmission_port "$gluetun_port"
 
         # wait for transmission port to update
@@ -197,6 +211,6 @@ while true; do
 
     else
         is_open=$(check_transmission_port_open)
-        log "heartbeat: gluetun & transmission ports match ($new_transmission_port), $is_open"
+        log "heartbeat: gluetun & transmission ports match ($new_transmission_port), $is_open" "s#\([0-9]+\)#\(* OMITTED *\)#"
     fi
 done
