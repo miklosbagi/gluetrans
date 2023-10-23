@@ -55,9 +55,9 @@ get_connection_country() {
 
 # wait for gluetun to become healthy
 wait_for_gluetun() {
-    until curl -s -m $STANDARD_WAIT_TIME -o /dev/null -w "%{http_code}" $GLUETUN_HEALTH_ENDPOINT | grep -q 200; do
+    until curl -s -m "$STANDARD_WAIT_TIME" -o /dev/null -w "%{http_code}" "$GLUETUN_HEALTH_ENDPOINT" | grep -q 200; do
         log "waiting for gluetun to become active..."
-        sleep $STANDARD_WAIT_TIME
+        sleep "$STANDARD_WAIT_TIME"
     done
     country_details=$(get_connection_country)
     log "gluetun is active, country details: $country_details"
@@ -99,7 +99,7 @@ check_transmission_port_open() {
 # pick a new gluetun server
 pick_new_gluetun_server() {
     log "asking gluetun to disconnect from $country_details"
-    gluetun_server_response=`curl -s -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status"` || log "error instructing gluetun to pick new server ($gluetun_server_response)."
+    gluetun_server_response=$(curl -s -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
     if [ "$gluetun_server_response" != '{"outcome":"stopped"}' ]; then
         log "bleh, gluetun server response is weird, expected {\"outcome\":\"stopped\"}, got $gluetun_server_response"
         return 1
@@ -157,7 +157,7 @@ while true; do
     if [[ $FORCED_COUNTRY_JUMP -ne 0 ]]; then
         # increment country jump timer
         country_jump_timer=$((country_jump_timer + PEERPORT_CHECK_INTERVAL))
-        log "country jump timer: $(( ($FORCE_JUMP_INTERVAL - $country_jump_timer) / 60 )) minute(s) left on this server."
+        log "country jump timer: $(( (FORCE_JUMP_INTERVAL - country_jump_timer) / 60 )) minute(s) left on this server."
 
         if [[ $country_jump_timer -ge $FORCE_JUMP_INTERVAL ]]; then
             log "country-jump: forcing gluetun to pick a new server after $FORCED_COUNTRY_JUMP minutes."
@@ -175,7 +175,7 @@ while true; do
         # wait for transmission port to update
         attempt=0
         while [ "$attempt" -lt 5 ]; do
-            sleep $STANDARD_WAIT_TIME
+            sleep "$STANDARD_WAIT_TIME"
             is_open=$(check_transmission_port_open)
             if [ "$is_open" == "Port is open: Yes" ]; then
                 break
