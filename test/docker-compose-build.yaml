@@ -1,0 +1,46 @@
+version: "3.7"
+
+services:
+  gluetun:
+    image: qmcgaw/gluetun:v3.35.0
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 8000:8000
+      - 9091:9091
+    environment:
+      VPN_SERVICE_PROVIDER: private internet access
+      OPENVPN_USER: ${TEST_P_USER}
+      OPENVPN_PASSWORD: ${TEST_P_PASS}
+      SERVER_REGIONS: ${TEST_P_SVCS}
+      VPN_PORT_FORWARDING: "on"
+      VPN_PORT_FORWARDING_PROVIDER: private internet access
+    restart: unless-stopped
+
+  transmission:
+    image: linuxserver/transmission:4.0.4
+    environment:
+      USER: ${TEST_T_USER}
+      PASS: ${TEST_T_PASS}
+      PEERPORT: 0 # default
+    network_mode: "service:gluetun"
+    restart: unless-stopped
+    depends_on:
+      - gluetun
+
+  gluetranspia:
+    build:
+      context: ../
+    environment:
+      GLUETUN_CONTROL_ENDPOINT: http://localhost:8000
+      GLUETUN_HEALTH_ENDPOINT: http://localhost:9999
+      GLUETUN_PICK_NEW_SERVER_AFTER: 10
+      PEERPORT_CHECK_INTERVAL: 30
+      TRANSMISSION_ENDPOINT: http://localhost:9091/transmission/rpc
+      TRANSMISSION_USER: ${TEST_T_USER}
+      TRANSMISSION_PASS: ${TEST_T_PASS}
+      FORCED_COUNTRY_JUMP: 1
+      SANITIZE_LOGS: 1
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
