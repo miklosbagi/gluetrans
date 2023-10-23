@@ -6,7 +6,7 @@ Please note that in order to use any of this, the following variables need to be
 - `GLUETRANSPIA_TRANSMISSION_USERNAME`
 - `GLUETRANSPIA_TRANSMISSION_PASSWORD`
 
-These are utilized via [.env](./env).
+These are utilized via [.env](./.env).
 
 ## Test infrastructure
 `make test-env-start` and `make test-env-stop` to start and stop the test environment.
@@ -25,15 +25,18 @@ Please take a look at the [docker-compose](./docker-compose-build.yaml) file.
 ## Smoke pack
 `make test-run-smoke` (depends on test infrastructure).
 
-1. Active gluetun is detected
-1. Port change is detected
-1. Transmission port update is successful
-1. Heartbeat is happening
-1. Gluetun and Transmission ports end up matching
-1. Transmission reports port is open
-1. Country jump timer is running
-1. Asking gluetun to disconnect
-1. Country Jump
+Coverage:
+1. Active gluetun is detected.
+1. Port change is detected.
+1. Transmission port update is successful.
+1. Heartbeat is happening.
+1. Gluetun and Transmission ports end up matching.
+1. Transmission reports port is open.
+1. Country jump timer is running.
+1. Asking gluetun to disconnect.
+1. Country Jump.
+
+Handled by [run-smoke.sh](./run-smoke.sh).
 
 ### Example output
 ```
