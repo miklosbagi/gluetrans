@@ -1,5 +1,5 @@
 # Use Alpine Linux as the base image
-FROM alpine:latest
+FROM alpine:3.18
 
 # Env vars
 ENV GLUETUN_ENDPOINT=$GLUETUN_ENDPOINT
@@ -9,7 +9,7 @@ ENV TRANSMISSION_PASS=$TRANSMISSION_PASS
 ENV PEERPORT_CHECK_INTERVAL=$PEERPORT_CHECK_INTERVAL
 
 # Install necessary packages
-RUN apk add --no-cache transmission-cli jq bash curl
+RUN apk add --no-cache transmission-cli=4.0.4-r0 jq=1.6-r3 bash=5.2.15-r5 curl=8.4.0-r0
 
 # Copy the script into the container
 COPY entrypoint.sh /entrypoint.sh
