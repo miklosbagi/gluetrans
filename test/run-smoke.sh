@@ -25,7 +25,8 @@ assert_keyword() {
     if ! check_docker_logs "$test_name" "$pattern"; then
         echo "  😵 [$test_name] failed for pattern: $pattern"
         exit 1
-    fi}
+    fi
+}
 
 
 # country-jump test: get country hashes
