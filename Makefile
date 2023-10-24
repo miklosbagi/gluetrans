@@ -48,6 +48,13 @@ test-env-start: test-env-stop
 test-env-stop:
 	$(DOCKER_COMPOSE_CMD) down --remove-orphans --volumes
 
+test-run-sonar:
+	sonar-scanner \
+		-Dsonar.organization=${GLUETRANSPIA_SONAR_ORGANIZATION} \
+		-Dsonar.projectKey=${GLUETRANSPIA_SONAR_PROJECT_KEY} \
+		-Dsonar.sources=. \
+		-Dsonar.host.url=https://sonarcloud.io
+
 test-run-smoke:
 	@test/run-smoke.sh && echo "✅ All smoke tests pass." || (echo "❌ Smoke tests failed." && exit 1)
 
