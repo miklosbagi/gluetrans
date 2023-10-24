@@ -40,7 +40,7 @@ else
 	@echo "❌ Please provide a version number using 'make release-version VERSION=x.y'"
 endif
 
-test: lint test-env-start test-run-smoke
+test: lint test-env-start test-run-smoke test-env-stop
 
 test-env-start: test-env-stop
 	$(DOCKER_COMPOSE_CMD) up --no-deps --build --force-recreate --remove-orphans --detach
