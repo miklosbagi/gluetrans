@@ -1,17 +1,16 @@
 name: GlueTransPia PR Check
-
 on:
-  # push:
-  #   branches:
-  #     - master
-  # pull_request:
-  #   branches:
-  #     - master
-  #   types:
-  #     - opened
-  #     - reopened
-  #     - edited
-  #     - synchronize
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
   workflow_dispatch:
 
 jobs:
@@ -23,12 +22,10 @@ jobs:
         with:
           dockerfile: Dockerfile
   lint-sh:
-    name: Shellcheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@2.0.0
+      - uses: ludeeus/action-shellcheck@2.0.0
   pr-check:
     runs-on: ubuntu-latest
     env:
