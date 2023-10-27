@@ -1,17 +1,18 @@
 name: GlueTransPia PR Check
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
-    types:
-      - opened
-      - reopened
-      - edited
-      - synchronize
+  # push:
+  #   branches:
+  #     - master
+  # pull_request:
+  #   branches:
+  #     - master
+  #   types:
+  #     - opened
+  #     - reopened
+  #     - edited
+  #     - synchronize
+  workflow_dispatch:
 
 jobs:
   lint-docker:
@@ -21,7 +22,6 @@ jobs:
       - uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
-
   lint-sh:
     name: Shellcheck
     runs-on: ubuntu-latest
@@ -29,10 +29,18 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@2.0.0
-
   pr-check:
     runs-on: ubuntu-latest
+    env:
+      GLUETRANSPIA_PIAVPN_USERNAME: ${{ secrets.GLUETRANSPIA_PIAVPN_USERNAME }}
+      GLUETRANSPIA_PIAVPN_PASSWORD: ${{ secrets.GLUETRANSPIA_PIAVPN_PASSWORD }}
+      GLUETRANSPIA_PIAVPN_REGIONS: ${{ secrets.GLUETRANSPIA_PIAVPN_REGIONS }}
+      GLUETRANSPIA_TRANSMISSION_USERNAME: ${{ secrets.GLUETRANSPIA_TRANSMISSION_USERNAME }}
+      GLUETRANSPIA_TRANSMISSION_PASSWORD: ${{ secrets.GLUETRANSPIA_TRANSMISSION_PASSWORD }}
+      GLUETRANSPIA_SONAR_ORGANIZATION: ${{ secrets.GLUETRANSPIA_SONAR_ORGANIZATION }}
+      GLUETRANSPIA_SONAR_PROJECT_KEY: ${{ secrets.GLUETRANSPIA_SONAR_PROJECT_KEY }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
     - uses: actions/checkout@v3
     - name: Build env and run tests
-      run: make test
+      run: make pr-test
