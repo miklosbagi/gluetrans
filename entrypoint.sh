@@ -81,7 +81,7 @@ wait_for_gluetun() {
 get_transmission_port() {
     transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$TRANSMISSION_USER":"$TRANSMISSION_PASS" -si | grep Listenport | awk -F' ' '{print $2}')
     if [ "$transmission_response" == "" ]; then
-        log "tramsmission returned '$transmission_response', retrying ($transmission_port_fail_count / $GLUETUN_PICK_NEW_SERVER_AFTER)..."
+        log "tramsmission returned '$transmission_response', waiting for $gluetun_port to be picked up, retrying ($transmission_port_fail_count / $GLUETUN_PICK_NEW_SERVER_AFTER)...", "s#$gluetun_port#* OMITTED *#g"
         return 1
     else
         echo "$transmission_response"
