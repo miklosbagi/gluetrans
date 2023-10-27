@@ -40,7 +40,9 @@ else
 	@echo "❌ Please provide a version number using 'make release-version VERSION=x.y'"
 endif
 
-test: lint test-env-start test-run-smoke test-env-stop
+test: lint pr-test
+
+pr-test: test-env-start test-run-all test-env-stop
 
 test-env-start: test-env-stop
 	$(DOCKER_COMPOSE_CMD) up --no-deps --build --force-recreate --remove-orphans --detach
@@ -55,7 +57,7 @@ test-run-sonar:
 		-Dsonar.sources=. \
 		-Dsonar.host.url=https://sonarcloud.io
 
-test-run-smoke:
+test-run-all:
 	@test/run-smoke.sh && echo "✅ All smoke tests pass." || (echo "❌ Smoke tests failed." && exit 1)
 
-.PHONY: all build lint release-dev release-latest release-version test test-env-start test-env-stop test-run-smoke
+.PHONY: all build lint release-dev release-latest release-version test test-env-start test-env-stop test-run-all
