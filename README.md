@@ -1,5 +1,6 @@
 # GlueTransPIA Peer Port updater
-[![Docker Pulls](https://badgen.net/docker/pulls/miklosbagi/gluetranspia?icon=docker&label=pulls)](https://hub.docker.com/r/miklosbagi/gluetranspia/)
+[![GlueTransPia PR Check](https://github.com/miklosbagi/gluetranspia/actions/workflows/pr-check.yml/badge.svg)](https://github.com/miklosbagi/gluetranspia/actions/workflows/pr-check.yml)
+[![Docker Pulls](https://badgen.net/docker/pulls/miklosbagi/gluetranspia?icon=docker&label=Docker%20Pulls)](https://hub.docker.com/r/miklosbagi/gluetranspia/)
 
 Gluetun / PIA (Private Internet Access) VPN Peer Port updater for Transmission.
 
