@@ -1,4 +1,4 @@
-name: GlueTransPia PR Check v3.35
+name: GlueTransPia PR Check Latest
 on:
   push:
     branches:
