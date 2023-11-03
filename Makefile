@@ -6,6 +6,7 @@ DOCKER_COMPOSE_CMD := docker-compose -f test/docker-compose-build.yaml
 
 GLUETUN_VERSION := v3.36.0
 TRANSMISSION_VERSION := 4.0.4
+COUNTRY_DETECT_ENDPOINTS := http://ipinfo.io,http://ip-api.com/json,http://ifconfig.co/json
 
 GLUETRANSPIA_PIAVPN_USERNAME := $(shell echo $$GLUETRANSPIA_PIAVPN_USERNAME)
 include test/.env
