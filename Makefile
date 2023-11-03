@@ -4,6 +4,9 @@ GHCR_REPO := ghcr.io/miklosbagi/gluetranspia
 DOCKER_BUILD_CMD := docker buildx build --platform linux/amd64,linux/arm64
 DOCKER_COMPOSE_CMD := docker-compose -f test/docker-compose-build.yaml
 
+GLUETUN_VERSION := v3.36.0
+TRANSMISSION_VERSION := 4.0.4
+
 GLUETRANSPIA_PIAVPN_USERNAME := $(shell echo $$GLUETRANSPIA_PIAVPN_USERNAME)
 include test/.env
 export
