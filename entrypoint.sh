@@ -52,13 +52,21 @@ log () {
 
 # get current connection country
 get_connection_country() {
-    country=$(curl -s http://ipinfo.io | jq '.country' 2>&1)
-    if [[ $country == *"parse error"* ]]; then
-        log "Error occurred while fetching the country: $country"
-        echo "unknown"
-    else
-        echo "$country"
-    fi
+    IFS=',' read -ra endpoints <<< "$COUNTRY_DETECT_ENDPOINTS"
+    retries=3
+    for endpoint in "${endpoints[@]}"; do
+        for ((i=0; i<retries; i++)); do
+            country=$(curl -s "$endpoint" | jq -r '.country' 2>&1)
+            if [[ $country != *"parse error"* ]]; then
+                echo "$country"
+                return 0
+            fi
+            log "Error occurred while fetching the country from $endpoint, attempt $((i + 1)) of $retries"
+            sleep 1
+        done
+    done
+    log "Unable to retrieve country information from any of the endpoints."
+    echo "unknown"
 }
 
 # hash sensitive info
