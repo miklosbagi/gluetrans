@@ -1,4 +1,4 @@
-name: GlueTransPia PR Check
+name: GlueTransPia PR Check Latest
 on:
   push:
     branches:
@@ -40,4 +40,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build env and run tests
-      run: make pr-test
+      run: make GLUETUN_VERSION=latest pr-test
