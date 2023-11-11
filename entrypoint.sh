@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# GlueTransPIA: A Gluetun + Transmission + PIA VPN peer port updater
-# Please take a look at https://github.com/miklosbagi/gluetranspia for more information.
+# GlueTrans: A Gluetun + Transmission + VPN peer port updater
+# Please take a look at https://github.com/miklosbagi/gluetrans for more information.
 # Further recommended reading:
 # - GlueTun: https://github.com/qdm12/gluetun-wiki
 # - PIA VPN: https://github.com/qdm12/gluetun-wiki/blob/main/setup/providers/private-internet-access.md
+# - ProtonVPN: https://github.com/qdm12/gluetun-wiki/blob/main/setup/providers/protonvpn.md
 # - Control server: https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md
 # - Port forwarding: https://github.com/qdm12/gluetun-wiki/blob/main/setup/options/port-forwarding.md
 
@@ -26,7 +27,7 @@ FORCE_JUMP_INTERVAL=$((FORCED_COUNTRY_JUMP * 60))
 SANITIZE_LOGS=${SANITIZE_LOGS:-0}
 
 # constants
-tag="gtpia"
+tag="gt"
 country_jump_timer=0
 gluetun_port_fail_count=0
 transmission_port_fail_count=0
@@ -96,7 +97,7 @@ get_transmission_port() {
     fi
 }
 
-# get peer port from piavpn via gluetun control server
+# get peer port from vpn via gluetun control server
 get_gluetun_port() {
     gluetun_response=$(curl -s "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/portforwarded")
     if [ "$gluetun_response" == "" ] || [ "$gluetun_response" == '{"port":0}' ]; then
