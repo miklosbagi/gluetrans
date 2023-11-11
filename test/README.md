@@ -1,10 +1,10 @@
-# GlueTransPIA Tests
+# GlueTrans Tests
 Please note that in order to use any of this, the following variables need to be exported in the shell:
-- `GLUETRANSPIA_PIAVPN_USERNAME`
-- `GLUETRANSPIA_PIAVPN_PASSWORD`
-- `GLUETRANSPIA_PIAVPN_REGIONS`
-- `GLUETRANSPIA_TRANSMISSION_USERNAME`
-- `GLUETRANSPIA_TRANSMISSION_PASSWORD`
+- `GLUETRANS_VPN_USERNAME`
+- `GLUETRANS_VPN_PASSWORD`
+- `GLUETRANS_VPN_REGIONS`
+- `GLUETRANS_TRANSMISSION_USERNAME`
+- `GLUETRANS_TRANSMISSION_PASSWORD`
 
 These are utilized via [.env](./.env).
 
@@ -13,7 +13,7 @@ These are utilized via [.env](./.env).
 Components:
 - Gluetun
 - Transmisison
-- GlueTransPIA
+- GlueTrans
 
 Please take a look at the [docker-compose](./docker-compose-build.yaml) file.
 
@@ -43,7 +43,7 @@ Handled by [run-smoke.sh](./run-smoke.sh).
 [+] Running 4/4
  ✔ Network test_default           Created                                                                                                              0.0s
  ✔ Container test-gluetun-1       Started                                                                                                              0.0s
- ✔ Container test-gluetranspia-1  Started                                                                                                              0.1s
+ ✔ Container test-gluetrans-1  Started                                                                                                              0.1s
  ✔ Container test-transmission-1  Started                                                                                                              0.1s
 Running tests...
   👍🏻 [Active gluetun is detected] passed: Pattern 'gluetun is active, country details' found in the logs.

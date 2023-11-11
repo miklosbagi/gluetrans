@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SERVICE_NAME="gluetranspia" # as in docker-compose.yml
+SERVICE_NAME="gluetrans" # as in docker-compose.yml
 COMPOSE_FILE="test/docker-compose-build.yaml"
 
 check_docker_logs() {

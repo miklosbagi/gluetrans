@@ -28,7 +28,7 @@ services:
     depends_on:
       - gluetun
 
-  gluetranspia:
+  gluetrans:
     build:
       context: ../
     environment:
