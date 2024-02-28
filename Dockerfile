@@ -9,7 +9,6 @@ ENV TRANSMISSION_PASS=$TRANSMISSION_PASS
 ENV PEERPORT_CHECK_INTERVAL=$PEERPORT_CHECK_INTERVAL
 
 # install packages
-RUN apk update
 RUN apk add --no-cache transmission-cli=4.0.5-r0 jq=1.7.1-r0 bash=5.2.21-r0 curl=8.5.0-r0
 
 # copy script to container
