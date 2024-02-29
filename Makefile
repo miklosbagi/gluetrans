@@ -6,7 +6,6 @@ DOCKER_COMPOSE_CMD := docker-compose -f test/docker-compose-build.yaml
 
 GLUETUN_VERSION := v3.37.0
 TRANSMISSION_VERSION := 4.0.5
-COUNTRY_DETECT_ENDPOINTS := http://ipinfo.io,http://ip-api.com/json,http://ifconfig.co/json
 
 GLUETRANS_VPN_USERNAME := $(shell echo $$GLUETRANS_VPN_USERNAME)
 include test/.env
