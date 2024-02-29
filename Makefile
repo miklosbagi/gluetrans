@@ -4,9 +4,8 @@ GHCR_REPO := ghcr.io/miklosbagi/gluetrans
 DOCKER_BUILD_CMD := docker buildx build --platform linux/amd64,linux/arm64
 DOCKER_COMPOSE_CMD := docker-compose -f test/docker-compose-build.yaml
 
-GLUETUN_VERSION := v3.36.0
-TRANSMISSION_VERSION := 4.0.4
-COUNTRY_DETECT_ENDPOINTS := http://ipinfo.io,http://ip-api.com/json,http://ifconfig.co/json
+GLUETUN_VERSION := v3.37.0
+TRANSMISSION_VERSION := 4.0.5
 
 GLUETRANS_VPN_USERNAME := $(shell echo $$GLUETRANS_VPN_USERNAME)
 include test/.env
@@ -62,6 +61,10 @@ test-run-sonar:
 		-Dsonar.host.url=https://sonarcloud.io
 
 test-run-all:
-	@test/run-smoke.sh && echo "✅ All smoke tests pass." || (echo "❌ Smoke tests failed." && exit 1)
+	@test/run-smoke.sh && echo "✅ All smoke tests pass." || (echo "❌ Smoke tests failed." && \
+	  $(DOCKER_COMPOSE_CMD) logs gluetun | tail -n 100; \
+	  $(DOCKER_COMPOSE_CMD) logs transmission | tail -n 100; \
+	  $(DOCKER_COMPOSE_CMD) logs gluetrans | tail -n 100; \
+	  exit 1)
 
 .PHONY: all build lint release-dev release-latest release-version test test-env-start test-env-stop test-run-all
