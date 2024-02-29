@@ -62,6 +62,8 @@ test-run-sonar:
 
 test-run-all:
 	@test/run-smoke.sh && echo "✅ All smoke tests pass." || (echo "❌ Smoke tests failed." && \
+	  $(DOCKER_COMPOSE_CMD) logs glutun | tail -n 100; \
+	  $(DOCKER_COMPOSE_CMD) logs transmission | tail -n 100; \
 	  $(DOCKER_COMPOSE_CMD) logs gluetrans | tail -n 100; \
 	  exit 1)
 
