@@ -15,7 +15,6 @@
 # TRANSMISSION_ENDPOINT
 # TRANSMISSION_USER
 # TRANSMISSION_PASS
-
 GLUETUN_PICK_NEW_SERVER_AFTER=${GLUETUN_PICK_NEW_SERVER_AFTER:-10}
 PEERPORT_CHECK_INTERVAL=${PEERPORT_CHECK_INTERVAL:-15}
 STANDARD_WAIT_TIME=${STANDARD_WAIT_TIME:-5}
@@ -25,6 +24,9 @@ FORCE_JUMP_INTERVAL=$((FORCED_COUNTRY_JUMP * 60))
 
 # For secure run
 SANITIZE_LOGS=${SANITIZE_LOGS:-0}
+
+# Country detection
+COUNTRY_DETECT_ENDPOINTS="http://ipinfo.io,http://ifconfig.co/json"
 
 # constants
 tag="gt"
@@ -53,11 +55,11 @@ log () {
 
 # get current connection country
 get_connection_country() {
-    IFS=',' read -ra endpoints <<< "$COUNTRY_DETECT_ENDPOINTS"
+    IFS=',' read -ra endpoints <<< "${COUNTRY_DETECT_ENDPOINTS}"
     retries=3
     for endpoint in "${endpoints[@]}"; do
         for ((i=0; i<retries; i++)); do
-            country=$(curl -s "$endpoint" | jq -r '.country' 2>&1)
+            country=$(curl -s "$endpoint" | jq -r '.timezone' 2>&1)
             if [[ $country != *"parse error"* ]]; then
                 echo "$country"
                 return 0
@@ -78,7 +80,7 @@ hash_sensitive_info() {
 # wait for gluetun to become healthy
 wait_for_gluetun() {
     until curl -s -m "$STANDARD_WAIT_TIME" -o /dev/null -w "%{http_code}" "$GLUETUN_HEALTH_ENDPOINT" | grep -q 200; do
-        log "waiting for gluetun to become active..."
+        log "waiting for gluetun to establish connection..."
         sleep "$STANDARD_WAIT_TIME"
     done
     country_details=$(get_connection_country)

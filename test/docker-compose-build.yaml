@@ -9,12 +9,12 @@ services:
       - 8000:8000
       - 9091:9091
     environment:
-      VPN_SERVICE_PROVIDER: private internet access
+      VPN_SERVICE_PROVIDER: protonvpn
       OPENVPN_USER: ${TEST_P_USER}
       OPENVPN_PASSWORD: ${TEST_P_PASS}
-      SERVER_REGIONS: ${TEST_P_SVCS}
+      SERVER_COUNTRIES: ${TEST_P_SVCS}
       VPN_PORT_FORWARDING: "on"
-      VPN_PORT_FORWARDING_PROVIDER: private internet access
+      VPN_PORT_FORWARDING_PROVIDER: protonvpn
     restart: unless-stopped
 
   transmission:
