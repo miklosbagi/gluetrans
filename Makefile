@@ -61,6 +61,8 @@ test-run-sonar:
 		-Dsonar.host.url=https://sonarcloud.io
 
 test-run-all:
-	@test/run-smoke.sh && echo "✅ All smoke tests pass." || (echo "❌ Smoke tests failed." && exit 1)
+	@test/run-smoke.sh && echo "✅ All smoke tests pass." || (echo "❌ Smoke tests failed." && \
+	  $(DOCKER_COMPOSE_CMD) logs gluetrans | tail -n 100; \
+	  exit 1)
 
 .PHONY: all build lint release-dev release-latest release-version test test-env-start test-env-stop test-run-all
