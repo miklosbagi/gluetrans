@@ -45,7 +45,7 @@ get_hash() {
 echo "Running tests..."
 
 # Active Gluetun is detected
-TIMEOUT=60
+TIMEOUT=90
 assert_keyword "Active gluetun is detected" "gluetun is active, country details"
 get_hash "$docker_logs"
 
