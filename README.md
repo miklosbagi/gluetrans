@@ -1,6 +1,6 @@
 # GlueTrans Peer Port updater
 [![GlueTrans PR Check Latest](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-latest.yml/badge.svg)](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-latest.yml)
-[![GlueTrans PR Check v3.35](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-3.35.yml/badge.svg)](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-3.35.yml)
+[![GlueTrans PR Check v3.36](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-3.36.yml/badge.svg)](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-3.36.yml)
 
 [![Docker Pulls](https://badgen.net/docker/pulls/miklosbagi/gluetrans?icon=docker&label=Docker%20Pulls)](https://hub.docker.com/r/miklosbagi/gluetrans/)
 
@@ -8,6 +8,8 @@ Gluetun VPN Peer Port updater for Transmission.
 Supported providers:
 - Private Internet Access
 - ProtonVPN
+
+Supported gluetun versions: v3.35, v3.36, v3.37
 
 ## What does it do?
 1. Waits for gluetun to report healthy
@@ -76,14 +78,14 @@ docker run \
 gluetrans:local
 ```
 
-## Docker-compose example with gluetun + transmission
+## Docker-compose example with gluetun + transmission + piavpn
 Please note that `data` directory will be created if this gets executed as is.
 Also, please note that we test against versions, not :latest, as that's like a weather report.
 
 ```
 services:
   gluetun:
-    image: qmcgaw/gluetun:v3.35.0
+    image: qmcgaw/gluetun:v3.37.0
     volumes:
       - ./data/gluetun:/gluetun
     cap_add:
@@ -101,7 +103,7 @@ services:
     restart: unless-stopped
 
   transmission:
-    image: linuxserver/transmission:4.0.4
+    image: linuxserver/transmission:4.0.5
     environment:
       USER: My Transmission Username
       PASS: My Transmission Password
@@ -129,6 +131,36 @@ services:
     depends_on:
       - gluetun
 ```
+
+## Gluetun configuration for protonvpn example (for gluetun v3.36 and later please)
+Please note that `data` directory will be created if this gets executed as is.
+Also, please note that we test against versions, not :latest, as that's like a weather report.
+
+```
+services:
+  gluetun:
+    image: qmcgaw/gluetun:v3.37.0
+    volumes:
+      - ./data/gluetun:/gluetun
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 8000:8000 # Control server
+      - 9091:9091 # Transmission UI
+    environment:
+      VPN_SERVICE_PROVIDER: "protonvpn"
+      OPENVPN_USER: My OpenVPN Username
+      OPENVPN_PASSWORD: My OpenVPN Password
+      SERVER_COUNTRIES: "Romania,Poland,Netherlands,Moldova"
+      VPN_PORT_FORWARDING: on
+      VPN_PORT_FORWARDING_PROVIDER: "protonvpn"
+    restart: unless-stopped
+
+  transmission: ...same as with piavpn above...
+  gluetrans: ....same as with piavpn above...
+```
+
+Please note that the above is example for piavpn. Nightly tests are running against protonvpn provider, feel free to take a look into the compose file in test for a working example.
 
 ## Debug
 `docker logs -f gluetrans` should reveal what's happening.
@@ -175,3 +207,4 @@ Please note that this data is sanitized.
 ## Known issues
 - Transmission w/o RPC auth is not supported
 - If you see that the thirs server you'd expect is still not returning a valid peer port, please check the logs of gluetun, as it might be that the server is not healthy, or the port is not open. If it keeps returning 0 as port, please stop and start it again, there is a known bug
+- You probably want to avoid running this against gluetun:latest in case you see one of the build checks marked as failing. Fixing to a specific known to work version is rarely a bad idea.
