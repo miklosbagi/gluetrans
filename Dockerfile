@@ -1,5 +1,5 @@
 # Use Alpine Linux as the base image
-FROM alpine:3.19
+FROM alpine:3.19.1
 
 # required env vars
 ENV GLUETUN_ENDPOINT=$GLUETUN_ENDPOINT
