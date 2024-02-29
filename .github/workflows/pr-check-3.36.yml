@@ -1,4 +1,4 @@
-name: GlueTrans PR Check v3.35
+name: GlueTrans PR Check v3.36
 on:
   push:
     branches:
@@ -40,4 +40,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build env and run tests
-      run: make GLUETUN_VERSION=v3.35 pr-test
+      run: make GLUETUN_VERSION=v3.36 pr-test
