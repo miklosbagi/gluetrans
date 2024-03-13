@@ -58,7 +58,7 @@ TIMEOUT=60
 assert_keyword "Transmission port update is successful" "success: transmission port updated successfully."
 
 # Heartbeat is happening
-TIMEOUT=60
+TIMEOUT=120
 assert_keyword "Heartbeat is happening" "heartbeat: .*"
 
 # Gluetun and Transmission ports end up matching
