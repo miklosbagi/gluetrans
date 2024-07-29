@@ -1,5 +1,5 @@
 # GlueTrans Peer Port updater
-[![GlueTrans PR Check Latest](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-latest.yml/badge.svg)](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-latest.yml)  
+[![GlueTrans PR Check Latest](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-latest.yml/badge.svg)](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-latest.yml)
 [![GlueTrans PR Check v3.37](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-3.37.yml/badge.svg)](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-3.36.yml) [![GlueTrans PR Check v3.36](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-3.36.yml/badge.svg)](https://github.com/miklosbagi/gluetrans/actions/workflows/pr-check-3.36.yml)
 
 [![Docker Pulls](https://badgen.net/docker/pulls/miklosbagi/gluetrans?icon=docker&label=Docker%20Pulls)](https://hub.docker.com/r/miklosbagi/gluetrans/)
@@ -9,7 +9,8 @@ Supported providers:
 - Private Internet Access
 - ProtonVPN
 
-Supported gluetun versions: v3.35, v3.36, v3.37
+Supported gluetun versions: v3.35, v3.36, v3.37, v3.38
+(please note that there's no CI test for v3.35 as that version did not support protonvpn peer port back that time, but was tested and working with PIA).
 
 ## What does it do?
 1. Waits for gluetun to report healthy
