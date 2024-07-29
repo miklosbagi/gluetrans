@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 DOCKER_REPO := miklosbagi/gluetrans
-GHCR_REPO := ghcr.io/miklosbagi/gluetrans
+GHCR_REPO := ghcr.io/miklosbagi/gluetranspia
 DOCKER_BUILD_CMD := docker buildx build --platform linux/amd64,linux/arm64
 DOCKER_COMPOSE_CMD := docker-compose -f test/docker-compose-build.yaml
 
@@ -38,7 +38,8 @@ release-version:
 ifdef VERSION
 	$(MAKE) test
 	@${DOCKER_BUILD_CMD} -t $(DOCKER_REPO):$(VERSION) --push . && echo "✅ Release ${VERSION} built, tagged, and pushed to docker.io repo." || (echo "❌ Release ${VERSION} failed to build docker repo package." && exit 1)
-    @docker pull ${DOCKER_REPO}:${VERSION} && echo "✅ Release ${VERSION} successfully pulled from docker.io repo." || (echo "❌ Release ${VERSION} failed pulling back from docker repo." && exit 1)
+	@docker pull ${DOCKER_REPO}:${VERSION} && echo "✅ Release ${VERSION} successfully pulled from docker.io repo." || (echo "❌ Release ${VERSION} failed pulling back from docker repo." && exit 1)
+	@${DOCKER_BUILD_CMD} -t $(GHCR_REPO):$(VERSION) --push . && echo "✅ Release ${VERSION} built, tagged, and pushed to ghcr repo." || (echo "❌ Release ${VERSION} failed to build docker repo package." && exit 1)
 	@docker tag $(DOCKER_REPO):$(VERSION) ${GHCR_REPO}:${VERSION} && echo "✅ Release ${VERSION} tagged for ghcr repo." || (echo "❌ Release ${VERSION} tagging for ghcr repo." && exit 1)
 	@docker push ${GHCR_REPO}:${VERSION} && echo "✅ Release ${VERSION} pushed to ghcr repo." || (echo "❌ Release ${VERSION} failed pushing to ghcr repo." && exit 1)
 else
