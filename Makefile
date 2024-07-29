@@ -4,8 +4,9 @@ GHCR_REPO := ghcr.io/miklosbagi/gluetrans
 DOCKER_BUILD_CMD := docker buildx build --platform linux/amd64,linux/arm64
 DOCKER_COMPOSE_CMD := docker-compose -f test/docker-compose-build.yaml
 
-GLUETUN_VERSION := v3.37.0
+GLUETUN_VERSION := v3.38.0
 TRANSMISSION_VERSION := 4.0.5
+SANITIZE_LOGS := 0
 
 GLUETRANS_VPN_USERNAME := $(shell echo $$GLUETRANS_VPN_USERNAME)
 include test/.env
@@ -33,14 +34,15 @@ release-latest: test
 	@docker tag ${DOCKER_REPO}:latest ${GHCR_REPO}:latest && echo "✅ Release latest tagged for ghcr repo." || (echo "❌ Release latest tagging for ghcr repo." && exit 1)
 	@docker push ${GHCR_REPO}:latest && echo "✅ Release latest pushed to ghcr repo." || (echo "❌ Release latest failed pushing to ghcr repo." && exit 1)
 
-release-version: test
+release-version:
 ifdef VERSION
+	$(MAKE) test
 	@${DOCKER_BUILD_CMD} -t $(DOCKER_REPO):$(VERSION) --push . && echo "✅ Release ${VERSION} built, tagged, and pushed to docker.io repo." || (echo "❌ Release ${VERSION} failed to build docker repo package." && exit 1)
     @docker pull ${DOCKER_REPO}:${VERSION} && echo "✅ Release ${VERSION} successfully pulled from docker.io repo." || (echo "❌ Release ${VERSION} failed pulling back from docker repo." && exit 1)
 	@docker tag $(DOCKER_REPO):$(VERSION) ${GHCR_REPO}:${VERSION} && echo "✅ Release ${VERSION} tagged for ghcr repo." || (echo "❌ Release ${VERSION} tagging for ghcr repo." && exit 1)
 	@docker push ${GHCR_REPO}:${VERSION} && echo "✅ Release ${VERSION} pushed to ghcr repo." || (echo "❌ Release ${VERSION} failed pushing to ghcr repo." && exit 1)
 else
-	@echo "❌ Please provide a version number using 'make release-version VERSION=x.y'"
+	@echo "❌ Please provide a version number using 'make release-version VERSION=vX.Y'"
 endif
 
 test: lint pr-test
@@ -48,7 +50,7 @@ test: lint pr-test
 pr-test: test-env-start test-run-all test-env-stop
 
 test-env-start: test-env-stop
-	$(DOCKER_COMPOSE_CMD) up --no-deps --build --force-recreate --remove-orphans --detach
+	SANITIZE_LOGS=0 && $(DOCKER_COMPOSE_CMD) up --no-deps --build --force-recreate --remove-orphans --detach
 
 test-env-stop:
 	$(DOCKER_COMPOSE_CMD) down --remove-orphans --volumes

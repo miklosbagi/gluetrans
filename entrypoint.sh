@@ -59,7 +59,7 @@ get_connection_country() {
     retries=3
     for endpoint in "${endpoints[@]}"; do
         for ((i=0; i<retries; i++)); do
-            country=$(curl -s "$endpoint" | jq -r '.timezone' 2>&1)
+            country=$(curl -s "$endpoint" | jq -r '.timezone' 2>&1) || country=$(curl -s "$endpoint" | jq -r '.time_zone' 2>&1)
             if [[ $country != *"parse error"* ]]; then
                 echo "$country"
                 return 0
