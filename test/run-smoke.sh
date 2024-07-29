@@ -34,11 +34,15 @@ get_hash() {
     log_output=$1
     if [[ $log_output =~ $HASH_PATTERN ]]; then
         if [[ $hash_count -eq 0 ]]; then
-            hash1="${BASH_REMATCH[1]}"
+            hash1="${BASH_REMATCH[0]}"
             ((hash_count++))
         else
             hash2="${BASH_REMATCH[1]}"
+            #DEBUG echo "2: $hash2"
         fi
+    else
+        echo "  😵 [Country Jump] failed, country details not found."
+        exit 1
     fi
 }
 
@@ -47,6 +51,8 @@ echo "Running tests..."
 # Active Gluetun is detected
 TIMEOUT=120
 assert_keyword "Active gluetun is detected" "gluetun is active, country details"
+hash_count=0
+HASH_PATTERN="country details: [[:alpha:]]+/[[:alpha:]]+,"
 get_hash "$docker_logs"
 
 # Port change is detected
@@ -79,10 +85,10 @@ assert_keyword "Asking gluetun to disconnect" "asking gluetun to disconnect from
 
 # Country jump works
 TIMEOUT=240 # we may randomly jump to the same country again, so leave this a bit longer
-HASH_PATTERN="([0-9a-f]{64})"
-hash1=""
-hash2=""
-hash_count=0
+HASH_PATTERN="country details: [[:alpha:]]+/[[:alpha:]]+,"
+# hash1=""
+# hash2=""
+# hash_count=0
 get_hash "$docker_logs"
 
 if [ "$hash1" = "$hash2" ]; then
