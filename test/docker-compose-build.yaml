@@ -38,7 +38,7 @@ services:
       TRANSMISSION_USER: ${TEST_T_USER}
       TRANSMISSION_PASS: ${TEST_T_PASS}
       FORCED_COUNTRY_JUMP: 1
-      SANITIZE_LOGS: 1
+      SANITIZE_LOGS: ${SANITIZE_LOGS}
     network_mode: "service:gluetun"
     depends_on:
       - gluetun
