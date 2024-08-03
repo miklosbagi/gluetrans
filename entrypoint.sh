@@ -125,12 +125,12 @@ check_transmission_port_open() {
 pick_new_gluetun_server() {
     log "asking gluetun to disconnect from $country_details", "s#$country_details#* OMITTED *#"
     gluetun_server_response=$(curl -s -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
-    if ! echo "$gluetun_server_response" | grep -qE '{"outcome":"stopp(ed|ing)"}'; then
+    if ! echo "$gluetun_server_response" | grep -qE '{"outcome":.*"stopp(ed|ing)"}$'; then
         log "bleh, gluetun server response is weird, expected {\"outcome\":\"stopped\"} or {\"outcome\":\"stopping\"}, got $gluetun_server_response"
         return 1
-    fi    
+    fi
     # this is fixed as ~ around this time it takes for gluetun to reconnect, this avoids some nag in logs
-    sleep 15 
+    sleep 15
     # just in case this takes longer than expected
     wait_for_gluetun
 }
@@ -150,32 +150,32 @@ log "monitoring..."
 # main loop
 while true; do
     sleep "$PEERPORT_CHECK_INTERVAL"
-    
+
     # get gluetun port, and handle too many failures
     gluetun_port=$(get_gluetun_port) && gluetun_port_fail_count=0
 
     # get gluetun port, and handle too many failures
-    if [ -z "$gluetun_port" ]; then 
+    if [ -z "$gluetun_port" ]; then
         if [ "$gluetun_port_fail_count" == "$GLUETUN_PICK_NEW_SERVER_AFTER" ]; then
             log "gluetun port check failed $GLUETUN_PICK_NEW_SERVER_AFTER times, instructing gluetun to pick a new server."
             pick_new_gluetun_server
-            gluetun_port_fail_count=0; 
+            gluetun_port_fail_count=0;
         fi
-        gluetun_port_fail_count=$((gluetun_port_fail_count + 1)); 
-        continue; 
+        gluetun_port_fail_count=$((gluetun_port_fail_count + 1));
+        continue;
     fi
 
     # get transmission port
     transmission_port=$(get_transmission_port) && transmission_port_fail_count=0
-    if [ -z "$transmission_port" ]; then 
+    if [ -z "$transmission_port" ]; then
         if [ "$transmission_port_fail_count" == "$GLUETUN_PICK_NEW_SERVER_AFTER" ]; then
             log "transmission port check failed $GLUETUN_PICK_NEW_SERVER_AFTER times, instructing gluetun to pick a new server."
             pick_new_gluetun_server
             gluetun_port_fail_count=0;
             transmission_port_fail_count=0;
         fi
-        transmission_port_fail_count=$((transmission_port_fail_count + 1)); 
-        continue; 
+        transmission_port_fail_count=$((transmission_port_fail_count + 1));
+        continue;
     fi
 
     # check if forced country jump is needed
