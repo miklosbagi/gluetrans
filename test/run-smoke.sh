@@ -8,12 +8,13 @@ check_docker_logs() {
     pattern=$2
     end_time=$((SECONDS+TIMEOUT))
     while [ $SECONDS -lt $end_time ]; do
-        if docker_logs=$(docker-compose -f "$COMPOSE_FILE" logs "$SERVICE_NAME" 2>&1 | tac); then
+        if docker_logs=$(docker-compose -f "$COMPOSE_FILE" logs "$SERVICE_NAME" 2>&1 | awk '{lines[NR] = $0} END {for (i = NR; i > 0; i--) print lines[i]}'); then
             if echo "$docker_logs" | grep -qE "$pattern"; then
                 echo "  👍🏻 [$test_name] passed: Pattern '$pattern' found in the logs."
                 return 0
             fi
         fi
+        sleep 1
     done
     echo "  😵 [$test_name] failed: Pattern '$pattern' not found in the logs within $TIMEOUT seconds."
     return 1
