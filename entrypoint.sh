@@ -125,7 +125,7 @@ check_transmission_port_open() {
 pick_new_gluetun_server() {
     log "asking gluetun to disconnect from $country_details", "s#$country_details#* OMITTED *#"
     gluetun_server_response=$(curl -s -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
-    if ! echo "$gluetun_server_response" | grep -qE '{"outcome":.*"stopp(ed|ing)"}$'; then
+    if ! echo "$gluetun_server_response" | grep -q '{"outcome":"stopp\(ed\|ing\)"}'; then
         log "bleh, gluetun server response is weird, expected {\"outcome\":\"stopped\"} or {\"outcome\":\"stopping\"}, got $gluetun_server_response"
         return 1
     fi
