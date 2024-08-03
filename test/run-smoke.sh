@@ -49,7 +49,8 @@ get_hash() {
 echo "Running tests..."
 
 # Active Gluetun is detected
-TIMEOUT=240
+# gluetrans-1  | Aug 03 09:17:27 [gt] gluetun is active, country details: Europe/Berlin,
+TIMEOUT=120
 assert_keyword "Active gluetun is detected" "gluetun is active, country details"
 hash_count=0
 HASH_PATTERN="country details: [[:alpha:]]+/[[:alpha:]]+,"
