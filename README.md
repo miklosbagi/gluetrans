@@ -12,7 +12,7 @@ Supported providers:
 - Private Internet Access
 - ProtonVPN
 
-Supported gluetun versions: v3.35, v3.36, v3.37, v3.38
+Supported gluetun versions: all between v3.35 and v3.39 (incl minor versions), see tests passing/failing above for latest.
 (please note that there's no CI test for v3.35 as that version did not support protonvpn peer port back that time, but was tested and working with PIA).
 
 ## What does it do?
