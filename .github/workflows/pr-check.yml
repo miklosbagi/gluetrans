@@ -43,26 +43,20 @@ jobs:
     - name: Test against Gluetun v3.36
       run: make GLUETUN_VERSION=v3.36 pr-test
 
-    - uses: actions/checkout@v3
     - name: Test against Gluetun v3.37
       run: make GLUETUN_VERSION=v3.37 pr-test
 
-    - uses: actions/checkout@v3
     - name: Test against Gluetun v3.37.1
       run: make GLUETUN_VERSION=v3.37.1 pr-test
 
-    - uses: actions/checkout@v3
     - name: Test against Gluetun v3.38
       run: make GLUETUN_VERSION=v3.38 pr-test
 
-    - uses: actions/checkout@v3
     - name: Test against Gluetun v3.38.1
       run: make GLUETUN_VERSION=v3.38.1 pr-test
 
-    - uses: actions/checkout@v3
     - name: Test against Gluetun v3.39
       run: make GLUETUN_VERSION=v3.39 pr-test
 
-    - uses: actions/checkout@v3
     - name: Test against Gluetun latest
       run: make GLUETUN_VERSION=latest pr-test
