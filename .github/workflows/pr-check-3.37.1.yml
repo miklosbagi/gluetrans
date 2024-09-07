@@ -1,0 +1,43 @@
+name: GlueTrans PR Check v3.37.1
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+  workflow_dispatch:
+
+jobs:
+  lint-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+  lint-sh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ludeeus/action-shellcheck@2.0.0
+  pr-check:
+    runs-on: ubuntu-latest
+    env:
+      GLUETRANS_VPN_USERNAME: ${{ secrets.GLUETRANS_VPN_USERNAME }}
+      GLUETRANS_VPN_PASSWORD: ${{ secrets.GLUETRANS_VPN_PASSWORD }}
+      GLUETRANS_VPN_REGIONS: ${{ secrets.GLUETRANS_VPN_REGIONS }}
+      GLUETRANS_TRANSMISSION_USERNAME: ${{ secrets.GLUETRANS_TRANSMISSION_USERNAME }}
+      GLUETRANS_TRANSMISSION_PASSWORD: ${{ secrets.GLUETRANS_TRANSMISSION_PASSWORD }}
+      GLUETRANS_SONAR_ORGANIZATION: ${{ secrets.GLUETRANS_SONAR_ORGANIZATION }}
+      GLUETRANS_SONAR_PROJECT_KEY: ${{ secrets.GLUETRANS_SONAR_PROJECT_KEY }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build env and run tests
+      run: make GLUETUN_VERSION=v3.37.1 pr-test
