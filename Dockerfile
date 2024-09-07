@@ -9,7 +9,7 @@ ENV TRANSMISSION_PASS=$TRANSMISSION_PASS
 ENV PEERPORT_CHECK_INTERVAL=$PEERPORT_CHECK_INTERVAL
 
 # install packages
-RUN apk add --no-cache transmission-remote-4.0.5-r2 jq=1.7.1-r0 bash=5.2.26-r0 curl=8.9.1-r1
+RUN apk add --no-cache transmission-remote=4.0.5-r2 jq=1.7.1-r0 bash=5.2.26-r0 curl=8.9.1-r1
 
 # copy script to container
 COPY entrypoint.sh /entrypoint.sh
