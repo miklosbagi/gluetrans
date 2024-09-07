@@ -90,10 +90,3 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build env and run tests
       run: make GLUETUN_VERSION=latest pr-test
-
-  pr-check-gluetun-custom:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build env and run tests
-      run: make GLUETUN_VERSION=latest pr-test
