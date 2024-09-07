@@ -70,7 +70,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build env and run tests
-      run: make GLUETUN_VERSION=v3.38_1 pr-test
+      run: make GLUETUN_VERSION=v3.38.1 pr-test
 
   pr-check-gluetun-v3_39:
     runs-on: ubuntu-latest
