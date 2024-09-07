@@ -8,7 +8,7 @@ check_docker_logs() {
     pattern=$2
     end_time=$((SECONDS+TIMEOUT))
     while [ $SECONDS -lt $end_time ]; do
-        if docker_logs=$(docker-compose -f "$COMPOSE_FILE" logs "$SERVICE_NAME" 2>&1 | tac); then
+        if docker_logs=$(docker compose -f "$COMPOSE_FILE" logs "$SERVICE_NAME" 2>&1 | tac); then
             if echo "$docker_logs" | grep -qE "$pattern"; then
                 echo "  👍🏻 [$test_name] passed: Pattern '$pattern' found in the logs."
                 return 0
