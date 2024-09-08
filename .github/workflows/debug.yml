@@ -1,0 +1,32 @@
+name: GlueTrans Debug Workflow
+on:
+  workflow_dispatch:
+    inputs:
+      custom_gluetun_version:
+        description: 'Set a version of Gluetun to test against'
+        required: false
+        default: v3.39
+      tmate_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+
+jobs:
+  tmate-debug:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'miklosbagi' && github.event.inputs.tmate_enabled == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: mxschmitt/action-tmate@v3
+        name: Tmate Debug Session
+        with:
+          limit-access-to-actor: true
+
+  custom-gluetun-version-check:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.custom_gluetun_version != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build env and run tests
+        run: make GLUETUN_VERSION=${{ github.event.inputs.custom_gluetun_version }} pr-test
