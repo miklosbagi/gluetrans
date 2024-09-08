@@ -13,16 +13,6 @@ on:
       - synchronize
   workflow_dispatch:
 
-env:
-  GLUETRANS_VPN_USERNAME: ${{ secrets.GLUETRANS_VPN_USERNAME }}
-  GLUETRANS_VPN_PASSWORD: ${{ secrets.GLUETRANS_VPN_PASSWORD }}
-  GLUETRANS_VPN_REGIONS: ${{ secrets.GLUETRANS_VPN_REGIONS }}
-  GLUETRANS_TRANSMISSION_USERNAME: ${{ secrets.GLUETRANS_TRANSMISSION_USERNAME }}
-  GLUETRANS_TRANSMISSION_PASSWORD: ${{ secrets.GLUETRANS_TRANSMISSION_PASSWORD }}
-  GLUETRANS_SONAR_ORGANIZATION: ${{ secrets.GLUETRANS_SONAR_ORGANIZATION }}
-  GLUETRANS_SONAR_PROJECT_KEY: ${{ secrets.GLUETRANS_SONAR_PROJECT_KEY }}
-  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
 jobs:
   lint-docker:
     runs-on: ubuntu-latest
@@ -37,51 +27,36 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ludeeus/action-shellcheck@2.0.0
 
-  pr-check-gluetun-v3_36:
+  pr-check-against-supported-gluetun-versions:
+    env:
+      GLUETRANS_VPN_USERNAME: ${{ secrets.GLUETRANS_VPN_USERNAME }}
+      GLUETRANS_VPN_PASSWORD: ${{ secrets.GLUETRANS_VPN_PASSWORD }}
+      GLUETRANS_VPN_REGIONS: ${{ secrets.GLUETRANS_VPN_REGIONS }}
+      GLUETRANS_TRANSMISSION_USERNAME: ${{ secrets.GLUETRANS_TRANSMISSION_USERNAME }}
+      GLUETRANS_TRANSMISSION_PASSWORD: ${{ secrets.GLUETRANS_TRANSMISSION_PASSWORD }}
+      GLUETRANS_SONAR_ORGANIZATION: ${{ secrets.GLUETRANS_SONAR_ORGANIZATION }}
+      GLUETRANS_SONAR_PROJECT_KEY: ${{ secrets.GLUETRANS_SONAR_PROJECT_KEY }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Build env and run tests
+    - name: Test against Gluetun v3.36
       run: make GLUETUN_VERSION=v3.36 pr-test
 
-  pr-check-gluetun-v3_37:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build env and run tests
+    - name: Test against Gluetun v3.37
       run: make GLUETUN_VERSION=v3.37 pr-test
 
-  pr-check-gluetun-v3_37_1:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build env and run tests
+    - name: Test against Gluetun v3.37.1
       run: make GLUETUN_VERSION=v3.37.1 pr-test
 
-  pr-check-gluetun-v3_38:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build env and run tests
+    - name: Test against Gluetun v3.38
       run: make GLUETUN_VERSION=v3.38 pr-test
 
-  pr-check-gluetun-v3_38_1:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build env and run tests
+    - name: Test against Gluetun v3.38.1
       run: make GLUETUN_VERSION=v3.38.1 pr-test
 
-  pr-check-gluetun-v3_39:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build env and run tests
+    - name: Test against Gluetun v3.39
       run: make GLUETUN_VERSION=v3.39 pr-test
 
-  pr-check-gluetun-latest:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build env and run tests
+    - name: Test against Gluetun latest
       run: make GLUETUN_VERSION=latest pr-test
