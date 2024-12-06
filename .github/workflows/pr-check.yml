@@ -58,5 +58,8 @@ jobs:
     - name: Test against Gluetun v3.39
       run: make GLUETUN_VERSION=v3.39 pr-test
 
+    - name: Test against Gluetun v3.39.1
+      run: make GLUETUN_VERSION=v3.39.1 pr-test
+
     - name: Test against Gluetun latest
       run: make GLUETUN_VERSION=latest pr-test
