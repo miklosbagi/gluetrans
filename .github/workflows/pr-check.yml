@@ -12,7 +12,8 @@ on:
       - edited
       - synchronize
   workflow_dispatch:
-
+  schedule:
+      - cron: "0 6 * * *"
 jobs:
   lint-docker:
     runs-on: ubuntu-latest
