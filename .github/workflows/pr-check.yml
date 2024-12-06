@@ -40,9 +40,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Test against Gluetun v3.36
-      run: make GLUETUN_VERSION=v3.36 pr-test
-
     - name: Test against Gluetun v3.37
       run: make GLUETUN_VERSION=v3.37 pr-test
 
