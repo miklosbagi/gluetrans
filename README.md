@@ -101,6 +101,8 @@ services:
       VPN_PORT_FORWARDING: on
       VPN_PORT_FORWARDING_PROVIDER: "private internet access"
     restart: unless-stopped
+    devices:
+      - /dev/net/tun:/dev/net/tun
 
   transmission:
     image: linuxserver/transmission:4.0.5
