@@ -85,7 +85,7 @@ Also, please note that we test against versions, not :latest, as that's like a w
 ```
 services:
   gluetun:
-    image: qmcgaw/gluetun:v3.37.0
+    image: qmcgaw/gluetun:v3.40.0
     volumes:
       - ./data/gluetun:/gluetun
     cap_add:
@@ -105,7 +105,7 @@ services:
       - /dev/net/tun:/dev/net/tun
 
   transmission:
-    image: linuxserver/transmission:4.0.5
+    image: linuxserver/transmission:4.0.6
     environment:
       USER: My Transmission Username
       PASS: My Transmission Password
