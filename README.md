@@ -212,5 +212,5 @@ Please note that this data is sanitized.
 
 ## Known issues
 - Transmission w/o RPC auth is not supported
-- If you see that the thirs server you'd expect is still not returning a valid peer port, please check the logs of gluetun, as it might be that the server is not healthy, or the port is not open. If it keeps returning 0 as port, please stop and start it again, there is a known bug
+- If you see that the third server you'd expect is still not returning a valid peer port, please check the logs of gluetun, as it might be that the server is not healthy, or the port is not open. If it keeps returning 0 as port, please stop and start it again, there is a known bug
 - You probably want to avoid running this against gluetun:latest in case you see one of the build checks marked as failing. Fixing to a specific known to work version is rarely a bad idea.
