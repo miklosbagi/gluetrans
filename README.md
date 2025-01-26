@@ -13,7 +13,7 @@ Supported gluetun versions: all between v3.35 and v3.40 (incl minor versions), s
 
 > [!WARNING]
 > Breaking change ahead: starting from gluetun 3.40.0+ versions, control server requires authentication. You can read more about this in [gluetun control server documentation](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md#authentication).<br>
-> Gluetrans, from version 0.3.5 and above provides support for this change, but an API key must be provided. Please [consult compose the examples](#docker-compose-examples) and [config.toml example](#gluetun-config.toml) below.<br><br>
+> Gluetrans, from version 0.3.5 and above provides support for this change, but an API key must be provided. Please [consult compose the examples](#docker-compose-examples) and [config.toml example](#gluetun-configtoml) below.<br><br>
 > In short:
 > 1. Set `GLUETUN_CONTROL_API_KEY` in your environment variables.
 > 1. Create a role in gluetun's `config.toml` with the same API key.
