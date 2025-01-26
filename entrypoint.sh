@@ -12,6 +12,7 @@
 # Mandatory env vars, please set these:
 # GLUETUN_CONTROL_ENDPOINT
 # GLUETUN_HEALTH_ENDPOINT
+# GLUETUN_CONTROL_API_KEY
 # TRANSMISSION_ENDPOINT
 # TRANSMISSION_USER
 # TRANSMISSION_PASS
@@ -36,6 +37,7 @@ transmission_port_fail_count=0
 
 required_vars=(
     GLUETUN_CONTROL_ENDPOINT
+    GLUETUN_CONTROL_API_KEY
     TRANSMISSION_ENDPOINT
     TRANSMISSION_USER
     TRANSMISSION_PASS
@@ -101,7 +103,7 @@ get_transmission_port() {
 
 # get peer port from vpn via gluetun control server
 get_gluetun_port() {
-    gluetun_response=$(curl -s "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/portforwarded")
+    gluetun_response=$(curl -s -H "X-API-Key: $GLUETUN_CONTROL_API_KEY" "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/portforwarded")
     if [ "$gluetun_response" == "" ] || [ "$gluetun_response" == '{"port":0}' ]; then
         log "gluetun returned $gluetun_response, retrying ($gluetun_port_fail_count / $GLUETUN_PICK_NEW_SERVER_AFTER)..."
         return 1
@@ -124,11 +126,11 @@ check_transmission_port_open() {
 # pick a new gluetun server
 pick_new_gluetun_server() {
     log "asking gluetun to disconnect from $country_details", "s#$country_details#* OMITTED *#"
-    gluetun_server_response=$(curl -s -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
-    if echo "$gluetun_server_response" | grep -qE '{"outcome":"(stopping|stopped)"}'; then
-        log "bleh, gluetun server response is weird, expected {\"outcome\":\"stopping\"}, got $gluetun_server_response"
+    gluetun_server_response=$(curl -s -H "X-API-Key: $GLUETUN_CONTROL_API_KEY" -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
+    if ! echo "$gluetun_server_response" | grep -qE '\{"outcome":"(stopping|stopped)"\}'; then
+        log "bleh, gluetun server response is weird, expected one of {\"outcome\":\"stopping\"} or {\"outcome\":\"stopped\"}, got $gluetun_server_response"
         return 1
-    fi    
+    fi
     # this is fixed as ~ around this time it takes for gluetun to reconnect, this avoids some nag in logs
     sleep 15 
     # just in case this takes longer than expected
