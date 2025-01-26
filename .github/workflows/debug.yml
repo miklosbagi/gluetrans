@@ -25,7 +25,7 @@ env:
 jobs:
   tmate-debug:
     if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'miklosbagi' && github.event.inputs.tmate_enabled == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
       - uses: mxschmitt/action-tmate@v3
@@ -35,7 +35,7 @@ jobs:
 
   custom-gluetun-version-check:
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.custom_gluetun_version != '' }}
-    runs-on: ubuntu-25.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
       - name: Build env and run tests
