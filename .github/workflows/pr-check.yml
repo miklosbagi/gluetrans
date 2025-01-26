@@ -27,55 +27,55 @@ env:
 
 jobs:
   lint-docker:
-    runs-on: ubuntu-25.04
+    runs-on: ubuntu:25.04
     steps:
       - uses: actions/checkout@v3
       - uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
   lint-sh:
-    runs-on: ubuntu-25.04
+    runs-on: ubuntu:25.04
     steps:
       - uses: actions/checkout@v3
       - uses: ludeeus/action-shellcheck@2.0.0
 
   pr-check-against-3-38:
-    runs-on: ubuntu-25.04
+    runs-on: ubuntu:25.04
     steps:
     - uses: actions/checkout@v3
     - name: Test against Gluetun v3.38
       run: make GLUETUN_VERSION=v3.38 pr-test
 
   pr-check-against-3-38-1:
-    runs-on: ubuntu-25.04
+    runs-on: ubuntu:25.04
     steps:
     - uses: actions/checkout@v3
     - name: Test against Gluetun v3.38.1
       run: make GLUETUN_VERSION=v3.38.1 pr-test
 
   pr-check-against-3-39:
-    runs-on: ubuntu-25.04
+    runs-on: ubuntu:25.04
     steps:
     - uses: actions/checkout@v3
     - name: Test against Gluetun v3.39
       run: make GLUETUN_VERSION=v3.39 pr-test
 
   pr-check-against-3-39-1:
-    runs-on: ubuntu-25.04
+    runs-on: ubuntu:25.04
     steps:
     - uses: actions/checkout@v3
     - name: Test against Gluetun v3.39.1
       run: make GLUETUN_VERSION=v3.39.1 pr-test
 
   pr-check-against-3-40-0:
-    runs-on: ubuntu-25.04
+    runs-on: ubuntu:25.04
     steps:
     - uses: actions/checkout@v3
     - name: Test against Gluetun v3.40.0
       run: make GLUETUN_VERSION=v3.40.0 pr-test
 
   pr-check-against-latest:
-    runs-on: ubuntu-25.04
+    runs-on: ubuntu:25.04
     steps:
     - uses: actions/checkout@v3
     - name: Test against Gluetun latest
