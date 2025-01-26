@@ -8,8 +8,17 @@ Supported providers:
 - Private Internet Access
 - ProtonVPN
 
-Supported gluetun versions: all between v3.35 and v3.39 (incl minor versions), see tests passing/failing above for latest.
+Supported gluetun versions: all between v3.35 and v3.40 (incl minor versions), see tests passing/failing above for latest.
 (please note that there's no CI test for v3.35 as that version did not support protonvpn peer port back that time, but was tested and working with PIA).
+
+> [!WARNING]
+> Breaking change ahead: starting from gluetun 3.40.0+ versions, control server requires authentication. You can read more about this in [gluetun control server documentation](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md#authentication).<br>
+> Gluetrans, from version 0.3.5 and above provides support for this change, but an API key must be provided. Please [consult compose the examples](#docker-compose-examples) and [config.toml example](#gluetun-configtoml) below.<br><br>
+> In short:
+> 1. Set `GLUETUN_CONTROL_API_KEY` in your environment variables.
+> 1. Create a role in gluetun's `config.toml` with the same API key.
+> 1. Map `config.toml` to gluetun container.
+> 1. Set the same API key in gluetrans' environment variables.
 
 ## What does it do?
 1. Waits for gluetun to report healthy
@@ -24,6 +33,7 @@ It keeps trying until you have a valid peer port.
 ## Environment variables
 Mandatory:
 - `GLUETUN_CONTROL_ENDPOINT`: Full Control Server URL with port, e.g.: `http://gluetun:8000`.
+- `GLUETUN_CONTROL_API_KEY`: API key for the control server. This is requried from gluetun versions newer than v3.40.0.
 - `GLUETUN_HEALTH_ENDPOINT`: Full Health URL with port, `http://gluetun:9999` by default.
 - `TRANSMISSION_ENDPOINT` : Full Transmission RPC URL with port, service path, e.g.: `http://transmission:9091/transmission/rpc`.
 - `TRANSMISSION_USER`: Username for transmission RPC auth.
@@ -39,6 +49,7 @@ Optional:
 Export the necessary variables, for example:
 ```
 export GLUETUN_CONTROL_ENDPOINT=http://gluetun:8000
+export GLUETUN_CONTROL_API_KEY=your-secret-api-key
 export GLUETUN_HEALTH_ENDPOINT=http://gluetun:8080
 export TRANSMISSION_ENDPOINT=http://transmission:9091/transmission/rpc
 export TRANSMISSION_USER=transmission
@@ -56,6 +67,7 @@ Script logs to stdout, you can redirect it to a file if you want to with `./entr
 ```
 docker run \
 -e GLUETUN_CONTROL_ENDPOINT=http://gluetun:8000 \
+-e GLUETUN_CONTROL_API_KEY=your-secret-api-key \
 -e GLUETUN_HEALTH_ENDPOINT=http://gluetun:8080 \
 -e TRANSMISSION_ENDPOINT=http://transmission:9091/transmission/rpc \
 -e TRANSMISSION_USER=transmission \
@@ -72,13 +84,15 @@ miklosbagi/gluetrans:latest
 docker run \
 -e GLUETUN_CONTROL_ENDPOINT=http://gluetun:8000 \
 -e GLUETUN_HEALTH_ENDPOINT=http://gluetun:8080 \
+-e GLUETUN_CONTROL_API_KEY=your-secret-api-key \
 -e TRANSMISSION_ENDPOINT=http://transmission:9091/transmission/rpc \
 -e TRANSMISSION_USER=transmission \
 -e TRANSMISSION_PASS=transmission \
 gluetrans:local
 ```
 
-## Docker-compose example with gluetun + transmission + piavpn
+## Docker-compose examples
+### PiaVPN (gluetun + transmission + piavpn)
 Please note that `data` directory will be created if this gets executed as is.
 Also, please note that we test against versions, not :latest, as that's like a weather report.
 
@@ -100,6 +114,9 @@ services:
       SERVER_REGIONS: "FI Helsinki,France,Norway,SE Stockholm,Serbia"
       VPN_PORT_FORWARDING: on
       VPN_PORT_FORWARDING_PROVIDER: "private internet access"
+    # from gluetun v3.40.0+ control server auth, mapping config.toml with api key is required
+    volumes:
+      - ./gluetun-config/config.toml:/gluetun/auth/config.toml
     restart: unless-stopped
     # for ubuntu-latest, you may need:
     devices:
@@ -124,6 +141,8 @@ services:
     environment:
       GLUETUN_CONTROL_ENDPOINT: http://localhost:8000
       GLUETUN_HEALTH_ENDPOINT: http://localhost:9999
+      # from gluetun v3.40.0+ control server auth key must be passed
+      GLUETUN_CONTROL_API_KEY: "secret-apikey-for-gluetrans" # must match the one in config.toml
       TRANSMISSION_ENDPOINT: http://localhost:9091/transmission/rpc
       TRANSMISSION_USER: My Transmission Username
       TRANSMISSION_PASS: My Transmission Password
@@ -135,7 +154,7 @@ services:
       - gluetun
 ```
 
-## Gluetun configuration for protonvpn example (for gluetun v3.36 and later please)
+### ProtonVPN (gluetun + transmission + protonvpn) (gluetun v3.36 and above only)
 Please note that `data` directory will be created if this gets executed as is.
 Also, please note that we test against versions, not :latest, as that's like a weather report.
 
@@ -157,6 +176,9 @@ services:
       SERVER_COUNTRIES: "Romania,Poland,Netherlands,Moldova"
       VPN_PORT_FORWARDING: on
       VPN_PORT_FORWARDING_PROVIDER: "protonvpn"
+    # from gluetun v3.40.0+ control server auth, mapping config.toml with api key is required
+    volumes:
+      - ./gluetun-config/config.toml:/gluetun/auth/config.toml
     restart: unless-stopped
     # for ubuntu-latest, you may need:
     devices:
@@ -168,23 +190,36 @@ services:
 
 Please note that the above is example for piavpn. Nightly tests are running against protonvpn provider, feel free to take a look into the compose file in test for a working example.
 
+### Gluetun config.toml
+For control server authentication, `config.toml` will be required to allow gluetrans to send authenticated requests to gluetun.
+```
+[[roles]]
+name = "gluetrans"
+routes = ["GET /v1/openvpn/portforwarded", "PUT /v1/openvpn/status"]
+auth = "apikey"
+apikey = "secret-apikey-for-gluetrans"
+```
+
 ## Debug
 `docker logs -f gluetrans` should reveal what's happening.
 
 ### Ideal scenario
 ```
 GlueTrans starting...
-Oct 10 10:10:11 [gt] waiting for gluetun to become active...
-Oct 10 10:10:17 [gt] gluetun is active, country details: "123.123.1.12,UK,Belgrade,CODE Test DataCenterHost Inc."
-Oct 10 10:10:17 [gt] monitoring...
-Oct 10 10:10:47 [gt] gluetun returned {"port":0}, retrying (1 / 15)...
-Oct 10 10:11:17 [gt] tramsmission returned '', retrying (1/15)...
-Oct 10 10:11:47 [gt] tramsmission returned '', retrying (2/15)...
-Oct 10 10:12:18 [gt] tramsmission returned '', retrying (3/15)...
-Oct 10 10:12:48 [gt] port change detected: gluetun is 12345, transmission is 0, updating...
-Oct 10 10:12:54 [gt] success: transmission port updated successfully.
-Oct 10 10:13:23 [gt] country jump timer: 14 minutes left on this server.
-Oct 10 10:13:24 [gt] heartbeat: gluetun & transmission ports match (12345), Port is open: Yes
+Jan 26 17:43:11 [gt] waiting for gluetun to establish connection...
+Jan 26 17:43:16 [gt] waiting for gluetun to establish connection...
+Jan 26 17:43:21 [gt] gluetun is active, country details: Europe/Berlin,
+Jan 26 17:43:21 [gt] monitoring...
+Jan 26 17:45:43 [gt] country jump timer: 0 minute(s) left on this server.
+Jan 26 17:45:43 [gt] port change detected: gluetun is 49198, transmission is 56864, Port is open: Yes updating...
+Jan 26 17:45:48 [gt] success: transmission port updated successfully.
+Jan 26 17:46:18 [gt] country jump timer: 0 minute(s) left on this server.
+Jan 26 17:46:19 [gt] heartbeat: gluetun & transmission ports match (49198), Port is open: Yes
+Jan 26 17:46:49 [gt] country jump timer: 0 minute(s) left on this server.
+Jan 26 17:46:49 [gt] countryjump: forcing gluetun to pick a new server after 1 minute(s).
+Jan 26 17:46:49 [gt] asking gluetun to disconnect from Europe/Berlin,
+Jan 26 17:47:04 [gt] gluetun is active, country details: Europe/Paris,
+...
 ```
 Please note that this data is sanitized.
 
