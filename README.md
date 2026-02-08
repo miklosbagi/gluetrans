@@ -8,8 +8,15 @@ Supported providers:
 - Private Internet Access
 - ProtonVPN
 
-Supported gluetun versions: all between v3.35 and v3.40 (incl minor versions), see tests passing/failing above for latest.
+Supported gluetun versions: v3.35 through v3.41.0 (and minor versions), see tests passing/failing above for latest.
 (please note that there's no CI test for v3.35 as that version did not support protonvpn peer port back that time, but was tested and working with PIA).
+
+> [!NOTE]
+> Starting with Gluetun v3.41.0, the Control Server HTTP API endpoints have been updated:
+> - `/v1/openvpn/portforwarded` → `/v1/portforward`
+> - `/v1/openvpn/status` → `/v1/vpn/status`
+>
+> Gluetrans automatically uses the correct endpoints for all supported versions.
 
 > [!WARNING]
 > Breaking change ahead: starting from gluetun 3.40.0+ versions, control server requires authentication. You can read more about this in [gluetun control server documentation](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md#authentication).<br>
@@ -99,7 +106,7 @@ Also, please note that we test against versions, not :latest, as that's like a w
 ```
 services:
   gluetun:
-    image: qmcgaw/gluetun:v3.40.0
+    image: qmcgaw/gluetun:v3.41.0
     volumes:
       - ./data/gluetun:/gluetun
     cap_add:
@@ -161,7 +168,7 @@ Also, please note that we test against versions, not :latest, as that's like a w
 ```
 services:
   gluetun:
-    image: qmcgaw/gluetun:v3.40.0
+    image: qmcgaw/gluetun:v3.41.0
     volumes:
       - ./data/gluetun:/gluetun
     cap_add:
@@ -195,7 +202,7 @@ For control server authentication, `config.toml` will be required to allow gluet
 ```
 [[roles]]
 name = "gluetrans"
-routes = ["GET /v1/openvpn/portforwarded", "PUT /v1/openvpn/status"]
+routes = ["GET /v1/portforward", "PUT /v1/vpn/status"]
 auth = "apikey"
 apikey = "secret-apikey-for-gluetrans"
 ```

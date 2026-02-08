@@ -4,7 +4,7 @@ GHCR_REPO := ghcr.io/miklosbagi/gluetranspia
 DOCKER_BUILD_CMD := docker buildx build --platform linux/amd64,linux/arm64
 DOCKER_COMPOSE_CMD := docker compose -f test/docker-compose-build.yaml
 
-GLUETUN_VERSION := v3.40.0
+GLUETUN_VERSION := v3.41.0
 TRANSMISSION_VERSION := 4.0.6
 SANITIZE_LOGS := 0
 
