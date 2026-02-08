@@ -16,6 +16,10 @@
 # TRANSMISSION_ENDPOINT
 # TRANSMISSION_USER
 # TRANSMISSION_PASS
+#
+# Optional security/debugging env vars:
+# DEBUG: Set to 1 to keep sensitive env vars visible for debugging (default: 0)
+# SANITIZE_LOGS: Set to 1 to omit sensitive information from logs (default: 0)
 GLUETUN_PICK_NEW_SERVER_AFTER=${GLUETUN_PICK_NEW_SERVER_AFTER:-10}
 PEERPORT_CHECK_INTERVAL=${PEERPORT_CHECK_INTERVAL:-15}
 STANDARD_WAIT_TIME=${STANDARD_WAIT_TIME:-5}
@@ -25,6 +29,7 @@ FORCE_JUMP_INTERVAL=$((FORCED_COUNTRY_JUMP * 60))
 
 # For secure run
 SANITIZE_LOGS=${SANITIZE_LOGS:-0}
+DEBUG=${DEBUG:-0}
 
 # Country detection
 COUNTRY_DETECT_ENDPOINTS="http://ipinfo.io,http://ifconfig.co/json"
@@ -92,7 +97,7 @@ wait_for_gluetun() {
 
 # get transmission peer port
 get_transmission_port() {
-    transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$TRANSMISSION_USER":"$TRANSMISSION_PASS" -si | grep Listenport | awk -F' ' '{print $2}')
+    transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -si | grep Listenport | awk -F' ' '{print $2}')
     if [ "$transmission_response" == "" ]; then
         log "tramsmission returned '$transmission_response', waiting for $gluetun_port to be picked up, retrying ($transmission_port_fail_count / $GLUETUN_PICK_NEW_SERVER_AFTER)...", "s#$gluetun_port#* OMITTED *#g"
         return 1
@@ -104,13 +109,13 @@ get_transmission_port() {
 # get peer port from vpn via gluetun control server
 get_gluetun_port() {
     # Try new API endpoint first (v3.41.0+)
-    gluetun_response=$(curl -s -H "X-API-Key: $GLUETUN_CONTROL_API_KEY" "$GLUETUN_CONTROL_ENDPOINT/v1/portforward")
+    gluetun_response=$(curl -s -H "X-API-Key: $_gluetun_api_key" "$GLUETUN_CONTROL_ENDPOINT/v1/portforward")
     
     # Check if new endpoint failed - fallback to old API for backward compatibility
     # Conditions: contains "not found", "Unauthorized", or doesn't have valid .port field
     if echo "$gluetun_response" | grep -iq "not found\|unauthorized" || ! echo "$gluetun_response" | jq -e '.port' >/dev/null 2>&1; then
         # Fallback to old API endpoint (v3.40.0 and older)
-        gluetun_response=$(curl -s -H "X-API-Key: $GLUETUN_CONTROL_API_KEY" "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/portforwarded")
+        gluetun_response=$(curl -s -H "X-API-Key: $_gluetun_api_key" "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/portforwarded")
     fi
     
     if [ "$gluetun_response" == "" ] || [ "$gluetun_response" == '{"port":0}' ]; then
@@ -123,12 +128,12 @@ get_gluetun_port() {
 
 # get transmission peer port from rpc endpoint
 update_transmission_port() {
-    transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$TRANSMISSION_USER":"$TRANSMISSION_PASS" -p "$1") || return 1
+    transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -p "$1") || return 1
 }
 
 # check if transmission port is open
 check_transmission_port_open() {
-    transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$TRANSMISSION_USER":"$TRANSMISSION_PASS" -pt) || return 1
+    transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -pt) || return 1
     echo "$transmission_response"
 }
 
@@ -137,12 +142,12 @@ pick_new_gluetun_server() {
     log "asking gluetun to disconnect from $country_details", "s#$country_details#* OMITTED *#"
     
     # Try new API endpoint first (v3.41.0+)
-    gluetun_server_response=$(curl -s -H "X-API-Key: $GLUETUN_CONTROL_API_KEY" -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/vpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
+    gluetun_server_response=$(curl -s -H "X-API-Key: $_gluetun_api_key" -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/vpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
     
     # Check if new endpoint failed - fallback to old API for backward compatibility
     if echo "$gluetun_server_response" | grep -iq "not found\|unauthorized" || ! echo "$gluetun_server_response" | grep -qE '\{"outcome":"(stopping|stopped)"\}'; then
         # Fallback to old API endpoint (v3.40.0 and older)
-        gluetun_server_response=$(curl -s -H "X-API-Key: $GLUETUN_CONTROL_API_KEY" -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
+        gluetun_server_response=$(curl -s -H "X-API-Key: $_gluetun_api_key" -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
         
         if ! echo "$gluetun_server_response" | grep -qE '\{"outcome":"(stopping|stopped)"\}'; then
             log "bleh, gluetun server response is weird, expected one of {\"outcome\":\"stopping\"} or {\"outcome\":\"stopped\"}, got $gluetun_server_response"
@@ -163,6 +168,29 @@ for var in "${required_vars[@]}"; do
         exit 1
     fi
 done
+
+# Store sensitive credentials in memory and remove from environment
+# This prevents them from being visible via 'docker exec <container> env'
+_gluetun_api_key="$GLUETUN_CONTROL_API_KEY"
+_transmission_user="$TRANSMISSION_USER"
+_transmission_pass="$TRANSMISSION_PASS"
+
+# Unset sensitive environment variables (unless DEBUG mode is enabled)
+if [[ "$DEBUG" != "1" ]]; then
+    unset GLUETUN_CONTROL_API_KEY
+    unset TRANSMISSION_USER
+    unset TRANSMISSION_PASS
+    log "security: sensitive environment variables removed from environment (stored in memory only)"
+    
+    # Verify the unset worked (for the main script process)
+    if [[ -z "$GLUETUN_CONTROL_API_KEY" ]] && [[ -z "$TRANSMISSION_USER" ]] && [[ -z "$TRANSMISSION_PASS" ]]; then
+        log "security: verified - sensitive vars are not accessible in main process environment"
+    else
+        log "warning: unset may not have worked as expected"
+    fi
+else
+    log "debug: DEBUG=1, keeping sensitive environment variables visible"
+fi
 
 # wait for gluetun to wake up
 wait_for_gluetun

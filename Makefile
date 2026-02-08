@@ -19,7 +19,8 @@ build:
 
 lint:
 	@shellcheck entrypoint.sh && echo "✅ ./entrypoint.sh linting passed." || (echo "❌ ./entrypoint.sh linting failed." && exit 1)
-	@shellcheck test/run-smoke.sh && echo "✅ test/run-smoke.sh linting passed." || (echo "❌ est/run-smoke.sh linting failed." && exit 1)
+	@shellcheck test/run-smoke.sh && echo "✅ test/run-smoke.sh linting passed." || (echo "❌ test/run-smoke.sh linting failed." && exit 1)
+	@shellcheck test/run-debug-test.sh && echo "✅ test/run-debug-test.sh linting passed." || (echo "❌ test/run-debug-test.sh linting failed." && exit 1)
 	@hadolint Dockerfile && echo "✅ Dockerfile linting passed." || (echo "❌ Dockerfile linting failed." && exit 1)
 
 release-dev: test
@@ -46,9 +47,11 @@ else
 	@echo "❌ Please provide a version number using 'make release-version VERSION=vX.Y'"
 endif
 
-test: lint pr-test
+test: lint pr-test test-debug-mode
 
 pr-test: test-env-start test-run-all test-env-stop
+
+test-debug-mode: test-debug-env-start test-run-debug test-debug-env-stop
 
 test-env-start: test-env-stop
 	@# Select appropriate config.toml based on Gluetun version
@@ -64,6 +67,20 @@ test-env-start: test-env-stop
 test-env-stop:
 	$(DOCKER_COMPOSE_CMD) down --remove-orphans --volumes
 
+test-debug-env-start: test-debug-env-stop
+	@# Select appropriate config.toml based on Gluetun version
+	@if echo "$(GLUETUN_VERSION)" | grep -qE "^v3\.(38|39|40\.0)$$|^latest$$"; then \
+		echo "Using old API config for Gluetun $(GLUETUN_VERSION)"; \
+		cp test/gluetun-config/config-old.toml test/gluetun-config/config.toml; \
+	else \
+		echo "Using new API config for Gluetun $(GLUETUN_VERSION)"; \
+		cp test/gluetun-config/config-new.toml test/gluetun-config/config.toml; \
+	fi
+	SANITIZE_LOGS=0 && docker compose -f test/docker-compose-build-debug.yaml up --no-deps --build --force-recreate --remove-orphans --detach
+
+test-debug-env-stop:
+	docker compose -f test/docker-compose-build-debug.yaml down --remove-orphans --volumes
+
 test-run-sonar:
 	sonar-scanner \
 		-Dsonar.organization=${GLUETRANS_SONAR_ORGANIZATION} \
@@ -78,4 +95,11 @@ test-run-all:
 	  $(DOCKER_COMPOSE_CMD) logs gluetrans | tail -n 100; \
 	  exit 1)
 
-.PHONY: all build lint release-dev release-latest release-version test test-env-start test-env-stop test-run-all
+test-run-debug:
+	@test/run-debug-test.sh && echo "✅ DEBUG mode tests pass." || (echo "❌ DEBUG mode tests failed." && \
+	  docker compose -f test/docker-compose-build-debug.yaml logs gluetun | tail -n 100; \
+	  docker compose -f test/docker-compose-build-debug.yaml logs transmission | tail -n 100; \
+	  docker compose -f test/docker-compose-build-debug.yaml logs gluetrans | tail -n 100; \
+	  exit 1)
+
+.PHONY: all build lint release-dev release-latest release-version test test-env-start test-env-stop test-run-all test-debug-mode test-debug-env-start test-debug-env-stop test-run-debug
