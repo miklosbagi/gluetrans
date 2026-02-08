@@ -1,5 +1,8 @@
 [[roles]]
 name = "gluetrans"
-routes = ["GET /v1/portforward", "GET /v1/vpn/status", "PUT /v1/vpn/status"]
+routes = [
+    "GET /v1/portforward", "GET /v1/vpn/status", "PUT /v1/vpn/status",  # New API (v3.41.0+)
+    "GET /v1/openvpn/portforwarded", "GET /v1/openvpn/status", "PUT /v1/openvpn/status"  # Old API (backward compat)
+]
 auth = "apikey"
 apikey = "secret-apikey-for-gluetrans"
