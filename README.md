@@ -51,6 +51,7 @@ Optional:
 - `GLUETUN_PICK_NEW_SERVER_AFTER`: pick a new server after X number of failures in detecting a working peer port. Default: 10, in number of retries.
 - `FORCED_COUNTRY_JUMP`: jump to a new country every X minutes. Default: 0 (means: disabled). Example: 120 (jump to new country every 2 hours).
 - `SANITIZE_LOGS`: sanitize logs. Default: 0 (means disabled). Set to 1 to omit potentially sensitive information from logs.
+- `DEBUG`: keep sensitive environment variables visible. Default: 0 (means disabled, credentials removed from env after startup). Set to 1 for debugging purposes to keep credentials visible in container environment.
 
 ## Vanilla usage
 Export the necessary variables, for example:
