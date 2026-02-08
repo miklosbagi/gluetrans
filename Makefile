@@ -51,6 +51,14 @@ test: lint pr-test
 pr-test: test-env-start test-run-all test-env-stop
 
 test-env-start: test-env-stop
+	@# Select appropriate config.toml based on Gluetun version
+	@if echo "$(GLUETUN_VERSION)" | grep -qE "^v3\.(38|39|40\.0)$$|^latest$$"; then \
+		echo "Using old API config for Gluetun $(GLUETUN_VERSION)"; \
+		cp test/gluetun-config/config-old.toml test/gluetun-config/config.toml; \
+	else \
+		echo "Using new API config for Gluetun $(GLUETUN_VERSION)"; \
+		cp test/gluetun-config/config-new.toml test/gluetun-config/config.toml; \
+	fi
 	SANITIZE_LOGS=0 && $(DOCKER_COMPOSE_CMD) up --no-deps --build --force-recreate --remove-orphans --detach
 
 test-env-stop:

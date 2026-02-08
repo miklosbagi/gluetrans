@@ -16,7 +16,7 @@ Supported gluetun versions: v3.35 through v3.41.0 (and minor versions), see test
 > - **v3.41.0+**: Uses new API (`/v1/portforward`, `/v1/vpn/status`)
 > - **v3.40.0 and older**: Uses old API (`/v1/openvpn/portforwarded`, `/v1/openvpn/status`)
 >
-> No configuration changes needed - backward compatibility is automatic!
+> The script automatically tries the new endpoint first and falls back to the old one if needed. However, your `config.toml` must match your Gluetun version (see below).
 
 > [!WARNING]
 > Breaking change ahead: starting from gluetun 3.40.0+ versions, control server requires authentication. You can read more about this in [gluetun control server documentation](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md#authentication).<br>
@@ -199,16 +199,34 @@ Please note that the above is example for piavpn. Nightly tests are running agai
 
 ### Gluetun config.toml
 For control server authentication, `config.toml` will be required to allow gluetrans to send authenticated requests to gluetun.
-```
+
+**Choose the config that matches YOUR Gluetun version:**
+
+<details>
+<summary><b>For Gluetun v3.41.0 and newer</b> (new API endpoints)</summary>
+
+```toml
 [[roles]]
 name = "gluetrans"
-routes = [
-    "GET /v1/portforward", "GET /v1/vpn/status", "PUT /v1/vpn/status",  # New API (v3.41.0+)
-    "GET /v1/openvpn/portforwarded", "GET /v1/openvpn/status", "PUT /v1/openvpn/status"  # Old API (backward compat)
-]
+routes = ["GET /v1/portforward", "GET /v1/vpn/status", "PUT /v1/vpn/status"]
 auth = "apikey"
 apikey = "secret-apikey-for-gluetrans"
 ```
+</details>
+
+<details>
+<summary><b>For Gluetun v3.40.0 and older</b> (old API endpoints)</summary>
+
+```toml
+[[roles]]
+name = "gluetrans"
+routes = ["GET /v1/openvpn/portforwarded", "GET /v1/openvpn/status", "PUT /v1/openvpn/status"]
+auth = "apikey"
+apikey = "secret-apikey-for-gluetrans"
+```
+</details>
+
+**Why separate configs?** Gluetun validates routes at startup and will reject routes that don't exist in that version. The gluetrans script automatically uses the correct endpoints regardless of your config.
 
 ## Debug
 `docker logs -f gluetrans` should reveal what's happening.
