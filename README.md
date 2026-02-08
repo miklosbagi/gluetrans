@@ -12,11 +12,11 @@ Supported gluetun versions: v3.35 through v3.41.0 (and minor versions), see test
 (please note that there's no CI test for v3.35 as that version did not support protonvpn peer port back that time, but was tested and working with PIA).
 
 > [!NOTE]
-> Starting with Gluetun v3.41.0, the Control Server HTTP API endpoints have been updated:
-> - `/v1/openvpn/portforwarded` → `/v1/portforward`
-> - `/v1/openvpn/status` → `/v1/vpn/status`
+> Gluetun v3.41.0 introduced new Control Server HTTP API endpoints. Gluetrans automatically detects and uses the correct endpoints:
+> - **v3.41.0+**: Uses new API (`/v1/portforward`, `/v1/vpn/status`)
+> - **v3.40.0 and older**: Uses old API (`/v1/openvpn/portforwarded`, `/v1/openvpn/status`)
 >
-> Gluetrans automatically uses the correct endpoints for all supported versions.
+> No configuration changes needed - backward compatibility is automatic!
 
 > [!WARNING]
 > Breaking change ahead: starting from gluetun 3.40.0+ versions, control server requires authentication. You can read more about this in [gluetun control server documentation](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md#authentication).<br>
@@ -202,7 +202,10 @@ For control server authentication, `config.toml` will be required to allow gluet
 ```
 [[roles]]
 name = "gluetrans"
-routes = ["GET /v1/portforward", "PUT /v1/vpn/status"]
+routes = [
+    "GET /v1/portforward", "GET /v1/vpn/status", "PUT /v1/vpn/status",  # New API (v3.41.0+)
+    "GET /v1/openvpn/portforwarded", "GET /v1/openvpn/status", "PUT /v1/openvpn/status"  # Old API (backward compat)
+]
 auth = "apikey"
 apikey = "secret-apikey-for-gluetrans"
 ```
