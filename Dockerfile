@@ -9,6 +9,7 @@ ENV TRANSMISSION_PASS=$TRANSMISSION_PASS
 ENV PEERPORT_CHECK_INTERVAL=$PEERPORT_CHECK_INTERVAL
 
 # install packages
+# hadolint ignore=DL3018
 RUN apk add --no-cache transmission-remote jq bash curl
 
 # copy script to container
