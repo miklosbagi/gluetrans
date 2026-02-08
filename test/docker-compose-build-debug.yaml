@@ -1,0 +1,50 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun:${GLUETUN_VERSION}
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 8000:8000
+      - 9091:9091
+    environment:
+      VPN_SERVICE_PROVIDER: protonvpn
+      OPENVPN_USER: ${TEST_P_USER}
+      OPENVPN_PASSWORD: ${TEST_P_PASS}
+      SERVER_COUNTRIES: ${TEST_P_SVCS}
+      VPN_PORT_FORWARDING: "on"
+      VPN_PORT_FORWARDING_PROVIDER: protonvpn
+    volumes:
+      - ./gluetun-config/config.toml:/gluetun/auth/config.toml
+    restart: unless-stopped
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+  transmission:
+    image: linuxserver/transmission:${TRANSMISSION_VERSION}
+    environment:
+      USER: ${TEST_T_USER}
+      PASS: ${TEST_T_PASS}
+      PEERPORT: 0 # default
+    network_mode: "service:gluetun"
+    restart: unless-stopped
+    depends_on:
+      - gluetun
+
+  gluetrans:
+    build:
+      context: ../
+    environment:
+      GLUETUN_CONTROL_ENDPOINT: http://localhost:8000
+      GLUETUN_CONTROL_API_KEY: "secret-apikey-for-gluetrans" # must match the one in config.toml
+      GLUETUN_HEALTH_ENDPOINT: http://localhost:9999
+      GLUETUN_PICK_NEW_SERVER_AFTER: 10
+      PEERPORT_CHECK_INTERVAL: 30
+      TRANSMISSION_ENDPOINT: http://localhost:9091/transmission/rpc
+      TRANSMISSION_USER: ${TEST_T_USER}
+      TRANSMISSION_PASS: ${TEST_T_PASS}
+      FORCED_COUNTRY_JUMP: 0  # Disable for faster debug test
+      SANITIZE_LOGS: ${SANITIZE_LOGS}
+      DEBUG: 1  # Enable DEBUG mode for this test
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun

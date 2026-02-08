@@ -48,6 +48,14 @@ get_hash() {
 
 echo "Running tests..."
 
+# Security: Sensitive vars are removed (DEBUG=0 by default)
+TIMEOUT=30
+assert_keyword "Security: sensitive vars removed" "security: sensitive environment variables removed from environment \(stored in memory only\)"
+
+# Security: Verify unset worked
+TIMEOUT=30
+assert_keyword "Security: unset verification" "security: verified - sensitive vars are not accessible in main process environment"
+
 # Active Gluetun is detected
 TIMEOUT=120
 assert_keyword "Active gluetun is detected" "gluetun is active, country details"
