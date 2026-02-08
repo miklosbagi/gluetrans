@@ -61,9 +61,17 @@ jobs:
     - name: Test against Gluetun v3.40.0
       run: make GLUETUN_VERSION=v3.40.0 pr-test
 
+  pr-check-against-3-41-0:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: Test against Gluetun v3.41.0
+      run: make GLUETUN_VERSION=v3.41.0 pr-test
+
   pr-check-against-latest:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v3
     - name: Test against Gluetun latest
       run: make GLUETUN_VERSION=latest pr-test
+      continue-on-error: true  # Docker Hub latest tag may be outdated
