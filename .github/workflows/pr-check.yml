@@ -15,6 +15,9 @@ on:
   schedule:
       - cron: "0 6 * * *"
 
+permissions:
+  contents: read
+
 env:
   GLUETRANS_VPN_USERNAME: ${{ secrets.GLUETRANS_VPN_USERNAME }}
   GLUETRANS_VPN_PASSWORD: ${{ secrets.GLUETRANS_VPN_PASSWORD }}
