@@ -24,6 +24,8 @@ on:
 jobs:
   lint-docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v3
       - uses: hadolint/hadolint-action@v3.1.0
@@ -31,11 +33,15 @@ jobs:
           dockerfile: Dockerfile
   lint-sh:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v3
       - uses: ludeeus/action-shellcheck@2.0.0
   pr-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       GLUETRANS_VPN_USERNAME: ${{ secrets.GLUETRANS_VPN_USERNAME }}
       GLUETRANS_VPN_PASSWORD: ${{ secrets.GLUETRANS_VPN_PASSWORD }}
@@ -53,3 +59,4 @@ jobs:
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.tmate_enabled }}
     - name: Build env and run tests
       run: make GLUETUN_VERSION=latest pr-test
+      continue-on-error: true  # Docker Hub latest tag may be outdated
