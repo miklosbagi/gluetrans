@@ -16,6 +16,7 @@ check_docker_logs() {
                 return 0
             fi
         fi
+        sleep 1  # Avoid hammering docker logs
     done
     echo "  😵 [$test_name] failed: Pattern '$pattern' not found in the logs within $TIMEOUT seconds."
     return 1
