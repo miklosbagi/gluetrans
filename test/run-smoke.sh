@@ -38,7 +38,7 @@ get_hash() {
             hash1="${BASH_REMATCH[0]}"
             ((hash_count++))
         else
-            hash2="${BASH_REMATCH[1]}"
+            hash2="${BASH_REMATCH[0]}"  # Fixed: was [1] but should be [0] since there's no capture group
             #DEBUG echo "2: $hash2"
         fi
     else
@@ -94,12 +94,14 @@ assert_keyword "Country jump timer is running" "country jump timer: [0-9]+ minut
 TIMEOUT=120
 assert_keyword "Asking gluetun to disconnect" "asking gluetun to disconnect from .*,$"
 
-# Country jump works
+# Wait for reconnection and get new country details
 TIMEOUT=240 # we may randomly jump to the same country again, so leave this a bit longer
 HASH_PATTERN="country details: [[:alpha:]]+/[[:alpha:]]+,"
-# hash1=""
-# hash2=""
-# hash_count=0
+# Wait for gluetun to reconnect and show country details again
+check_docker_logs "Wait for reconnection" "gluetun is active, country details" || {
+    echo "  😵 [Country Jump] failed: gluetun did not reconnect within timeout"
+    exit 1
+}
 get_hash "$docker_logs"
 
 if [ "$hash1" = "$hash2" ]; then
