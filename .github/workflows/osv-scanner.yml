@@ -26,10 +26,16 @@ permissions:
   security-events: write
   # Read commit contents
   contents: read
+  # Required for reusable workflows
+  actions: read
 
 jobs:
   scan-scheduled:
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
     uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.9.0"
     with:
       # Example of specifying custom arguments
@@ -39,6 +45,10 @@ jobs:
         ./
   scan-pr:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
     uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v1.9.0"
     with:
       # Example of specifying custom arguments
