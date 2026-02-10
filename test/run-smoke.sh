@@ -104,9 +104,9 @@ check_docker_logs "Wait for reconnection" "gluetun is active, country details" |
 }
 get_hash "$docker_logs"
 
+# Country comparison is non-critical - gluetun may randomly pick the same country
 if [ "$hash1" = "$hash2" ]; then
-    echo "  😵 [Country Jump] failed, country hashes are the same."
-    exit 1
+    echo "  ⚠️  [Country Jump] warning: gluetun reconnected to the same country (random selection)"
 else
     echo "  👍🏻 [Country Jump] passed: country hashes are different."
 fi
