@@ -18,5 +18,6 @@ COPY entrypoint.sh /entrypoint.sh
 # Make the script executable
 RUN chmod +x /entrypoint.sh
 
-# Run the script when the container starts
-CMD ["sh", "-c", "echo 'GlueTrans starting...'; sleep 5; /entrypoint.sh"]
+# Run bash as PID 1 so that unset in entrypoint.sh affects the container's init process
+# (fixes issue #88: exec must not see sensitive env vars)
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]

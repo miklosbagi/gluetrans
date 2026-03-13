@@ -21,6 +21,7 @@ lint:
 	@shellcheck entrypoint.sh && echo "✅ ./entrypoint.sh linting passed." || (echo "❌ ./entrypoint.sh linting failed." && exit 1)
 	@shellcheck test/run-smoke.sh && echo "✅ test/run-smoke.sh linting passed." || (echo "❌ test/run-smoke.sh linting failed." && exit 1)
 	@shellcheck test/run-debug-test.sh && echo "✅ test/run-debug-test.sh linting passed." || (echo "❌ test/run-debug-test.sh linting failed." && exit 1)
+	@shellcheck test/run-exec-env-test.sh && echo "✅ test/run-exec-env-test.sh linting passed." || (echo "❌ test/run-exec-env-test.sh linting failed." && exit 1)
 	@hadolint Dockerfile && echo "✅ Dockerfile linting passed." || (echo "❌ Dockerfile linting failed." && exit 1)
 
 release-dev: test
@@ -47,7 +48,11 @@ else
 	@echo "❌ Please provide a version number using 'make release-version VERSION=vX.Y'"
 endif
 
-test: lint pr-test test-debug-mode
+test: lint test-exec-env pr-test test-debug-mode
+
+# Standalone test for issue #88: PID 1 must be sanitized so exec does not see sensitive vars (when runtime passes PID 1 env)
+test-exec-env:
+	@test/run-exec-env-test.sh && echo "✅ Exec-env test pass." || (echo "❌ Exec-env test failed." && exit 1)
 
 pr-test: test-env-start test-run-all test-env-stop
 
@@ -102,4 +107,4 @@ test-run-debug:
 	  docker compose -f test/docker-compose-build-debug.yaml logs gluetrans | tail -n 100; \
 	  exit 1)
 
-.PHONY: all build lint release-dev release-latest release-version test test-env-start test-env-stop test-run-all test-debug-mode test-debug-env-start test-debug-env-stop test-run-debug
+.PHONY: all build lint release-dev release-latest release-version test test-exec-env test-env-start test-env-stop test-run-all test-debug-mode test-debug-env-start test-debug-env-stop test-run-debug

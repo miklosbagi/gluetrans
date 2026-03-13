@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo 'GlueTrans starting...'
+sleep 5
+
 # GlueTrans: A Gluetun + Transmission + VPN peer port updater
 # Please take a look at https://github.com/miklosbagi/gluetrans for more information.
 # Further recommended reading:
@@ -188,6 +191,8 @@ if [[ "$DEBUG" != "1" ]]; then
     else
         log "warning: unset may not have worked as expected"
     fi
+    # For test/run-exec-env-test.sh: PID 1's view of its own environ (after unset)
+    cat /proc/self/environ 2>/dev/null | tr '\0' '\n' >/tmp/pid1env.txt 2>/dev/null || true
 else
     log "debug: DEBUG=1, keeping sensitive environment variables visible"
 fi
