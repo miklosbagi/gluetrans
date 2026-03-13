@@ -7,6 +7,8 @@ DOCKER_COMPOSE_CMD := docker compose -f test/docker-compose-build.yaml
 GLUETUN_VERSION := v3.41.0
 TRANSMISSION_VERSION := 4.0.6
 SANITIZE_LOGS := 0
+# Optional: FIX=89 make release-dev → tags dev-89 (Docker Hub + GHCR) for testing multiple dev builds
+DEV_TAG := dev$(if $(FIX),-$(FIX),)
 
 GLUETRANS_VPN_USERNAME := $(shell echo $$GLUETRANS_VPN_USERNAME)
 include test/.env
@@ -25,10 +27,10 @@ lint:
 	@hadolint Dockerfile && echo "✅ Dockerfile linting passed." || (echo "❌ Dockerfile linting failed." && exit 1)
 
 release-dev: test
-	@${DOCKER_BUILD_CMD} -t ${DOCKER_REPO}:dev --push . && echo "✅ Release dev built, tagged, and pushed to docker.io repo." || (echo "❌ Release dev failed to build docker repo package." && exit 1)
-	@docker pull ${DOCKER_REPO}:dev && echo "✅ Release dev successfully pulled from docker.io repo." || (echo "❌ Release dev failed pulling back from docker repo." && exit 1)
-	@docker tag ${DOCKER_REPO}:dev ${GHCR_REPO}:dev && echo "✅ Release dev tagged for ghcr repo." || (echo "❌ Release dev tagging for ghcr repo." && exit 1)
-	@docker push ${GHCR_REPO}:dev && echo "✅ Release dev pushed to ghcr repo." || (echo "❌ Release dev failed pushing to ghcr repo." && exit 1)
+	@${DOCKER_BUILD_CMD} -t ${DOCKER_REPO}:$(DEV_TAG) --push . && echo "✅ Release $(DEV_TAG) built, tagged, and pushed to docker.io repo." || (echo "❌ Release $(DEV_TAG) failed to build docker repo package." && exit 1)
+	@docker pull ${DOCKER_REPO}:$(DEV_TAG) && echo "✅ Release $(DEV_TAG) successfully pulled from docker.io repo." || (echo "❌ Release $(DEV_TAG) failed pulling back from docker repo." && exit 1)
+	@docker tag ${DOCKER_REPO}:$(DEV_TAG) ${GHCR_REPO}:$(DEV_TAG) && echo "✅ Release $(DEV_TAG) tagged for ghcr repo." || (echo "❌ Release $(DEV_TAG) tagging for ghcr repo." && exit 1)
+	@docker push ${GHCR_REPO}:$(DEV_TAG) && echo "✅ Release $(DEV_TAG) pushed to ghcr repo." || (echo "❌ Release $(DEV_TAG) failed pushing to ghcr repo." && exit 1)
 
 release-latest: test
 	@${DOCKER_BUILD_CMD} -t ${DOCKER_REPO}:latest --push . && echo "✅ Release latest built, tagged, and pushed to docker.io repo." || (echo "❌ Release latest failed to build docker repo package." && exit 1)
