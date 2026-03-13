@@ -20,9 +20,15 @@
 # Optional security/debugging env vars:
 # DEBUG: Set to 1 to keep sensitive env vars visible for debugging (default: 0)
 # SANITIZE_LOGS: Set to 1 to omit sensitive information from logs (default: 0)
+# Optional timeouts (issue #89): avoid long blocks when Gluetun/Transmission are slow
+# CURL_API_TIMEOUT: max seconds for curl to Gluetun API and country endpoints (default: 10)
+# RPC_TIMEOUT: max seconds for transmission-remote RPC calls (default: 15)
 GLUETUN_PICK_NEW_SERVER_AFTER=${GLUETUN_PICK_NEW_SERVER_AFTER:-10}
 PEERPORT_CHECK_INTERVAL=${PEERPORT_CHECK_INTERVAL:-15}
 STANDARD_WAIT_TIME=${STANDARD_WAIT_TIME:-5}
+# Timeouts for external calls to avoid long blocks (issue #89)
+CURL_API_TIMEOUT=${CURL_API_TIMEOUT:-10}
+RPC_TIMEOUT=${RPC_TIMEOUT:-15}
 
 FORCED_COUNTRY_JUMP=${FORCED_COUNTRY_JUMP:-0}
 FORCE_JUMP_INTERVAL=$((FORCED_COUNTRY_JUMP * 60))
@@ -66,7 +72,7 @@ get_connection_country() {
     retries=3
     for endpoint in "${endpoints[@]}"; do
         for ((i=0; i<retries; i++)); do
-            country=$(curl -s "$endpoint" | jq -r '.timezone' 2>&1) || country=$(curl -s "$endpoint" | jq -r '.time_zone' 2>&1)
+            country=$(curl -s -m "$CURL_API_TIMEOUT" "$endpoint" | jq -r '.timezone' 2>&1) || country=$(curl -s -m "$CURL_API_TIMEOUT" "$endpoint" | jq -r '.time_zone' 2>&1)
             if [[ $country != *"parse error"* ]]; then
                 echo "$country"
                 return 0
@@ -97,7 +103,7 @@ wait_for_gluetun() {
 
 # get transmission peer port
 get_transmission_port() {
-    transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -si | grep Listenport | awk -F' ' '{print $2}')
+    transmission_response=$(timeout "$RPC_TIMEOUT" transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -si | grep Listenport | awk -F' ' '{print $2}')
     if [ "$transmission_response" == "" ]; then
         log "tramsmission returned '$transmission_response', waiting for $gluetun_port to be picked up, retrying ($transmission_port_fail_count / $GLUETUN_PICK_NEW_SERVER_AFTER)...", "s#$gluetun_port#* OMITTED *#g"
         return 1
@@ -109,13 +115,13 @@ get_transmission_port() {
 # get peer port from vpn via gluetun control server
 get_gluetun_port() {
     # Try new API endpoint first (v3.41.0+)
-    gluetun_response=$(curl -s -H "X-API-Key: $_gluetun_api_key" "$GLUETUN_CONTROL_ENDPOINT/v1/portforward")
-    
+    gluetun_response=$(curl -s -m "$CURL_API_TIMEOUT" -H "X-API-Key: $_gluetun_api_key" "$GLUETUN_CONTROL_ENDPOINT/v1/portforward")
+
     # Check if new endpoint failed - fallback to old API for backward compatibility
     # Conditions: contains "not found", "Unauthorized", or doesn't have valid .port field
     if echo "$gluetun_response" | grep -iq "not found\|unauthorized" || ! echo "$gluetun_response" | jq -e '.port' >/dev/null 2>&1; then
         # Fallback to old API endpoint (v3.40.0 and older)
-        gluetun_response=$(curl -s -H "X-API-Key: $_gluetun_api_key" "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/portforwarded")
+        gluetun_response=$(curl -s -m "$CURL_API_TIMEOUT" -H "X-API-Key: $_gluetun_api_key" "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/portforwarded")
     fi
     
     if [ "$gluetun_response" == "" ] || [ "$gluetun_response" == '{"port":0}' ]; then
@@ -128,12 +134,12 @@ get_gluetun_port() {
 
 # get transmission peer port from rpc endpoint
 update_transmission_port() {
-    transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -p "$1") || return 1
+    transmission_response=$(timeout "$RPC_TIMEOUT" transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -p "$1") || return 1
 }
 
 # check if transmission port is open
 check_transmission_port_open() {
-    transmission_response=$(transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -pt) || return 1
+    transmission_response=$(timeout "$RPC_TIMEOUT" transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -pt) || return 1
     echo "$transmission_response"
 }
 
@@ -142,12 +148,12 @@ pick_new_gluetun_server() {
     log "asking gluetun to disconnect from $country_details", "s#$country_details#* OMITTED *#"
     
     # Try new API endpoint first (v3.41.0+)
-    gluetun_server_response=$(curl -s -H "X-API-Key: $_gluetun_api_key" -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/vpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
-    
+    gluetun_server_response=$(curl -s -m "$CURL_API_TIMEOUT" -H "X-API-Key: $_gluetun_api_key" -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/vpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
+
     # Check if new endpoint failed - fallback to old API for backward compatibility
     if echo "$gluetun_server_response" | grep -iq "not found\|unauthorized" || ! echo "$gluetun_server_response" | grep -qE '\{"outcome":"(stopping|stopped)"\}'; then
         # Fallback to old API endpoint (v3.40.0 and older)
-        gluetun_server_response=$(curl -s -H "X-API-Key: $_gluetun_api_key" -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
+        gluetun_server_response=$(curl -s -m "$CURL_API_TIMEOUT" -H "X-API-Key: $_gluetun_api_key" -X PUT -d '{"status":"stopped"}' "$GLUETUN_CONTROL_ENDPOINT/v1/openvpn/status") || log "error instructing gluetun to pick new server ($gluetun_server_response)."
         
         if ! echo "$gluetun_server_response" | grep -qE '\{"outcome":"(stopping|stopped)"\}'; then
             log "bleh, gluetun server response is weird, expected one of {\"outcome\":\"stopping\"} or {\"outcome\":\"stopped\"}, got $gluetun_server_response"
