@@ -1,9 +1,8 @@
 # Dev / preview images for PRs to main (same-repo only).
 #
-# Tags (Docker Hub + GHCR):
+# Tags (GHCR always; Docker Hub when secrets are set):
 #   - dev-v<VERSION file>-<7-char-sha> — unique per commit (e.g. dev-v0.3.8-a1b2c3d); see repo root VERSION
-#   - dev — rolling tag; always points at the **last successful** build from this workflow
-#     (same digest as that run’s unique tag). Last PR build wins if several PRs run close together.
+#   - dev — rolling tag on each registry we push to; same digest as that run’s unique tag for that registry.
 #
 # Triggers:
 #   - pull_request (opened, synchronize, reopened, ready_for_review): **synchronize** runs on
@@ -13,12 +12,9 @@
 #
 # Production v* and :latest are pushed by docker-release.yml when you push a semver tag after merge.
 #
-# Required repository secrets (Settings → Secrets and variables → Actions):
-#   DOCKERHUB_USERNAME
-#   DOCKERHUB_TOKEN      (Docker Hub access token / PAT with read & write)
-#
-# If DOCKERHUB_USERNAME or DOCKERHUB_TOKEN is unset, the build-push job is skipped so PR checks
-# still pass; add both secrets to enable dev image pushes.
+# Optional Docker Hub (Settings → Secrets and variables → Actions):
+#   DOCKERHUB_USERNAME + DOCKERHUB_TOKEN — when both are set, the same dev tags are also pushed to
+#   docker.io. When unset, the workflow still builds and pushes **GHCR only** (no extra secrets).
 #
 # GHCR: GitHub forbids *naming* a repo secret GITHUB_* (reserved prefix). Use GH_TOKEN
 # for a PAT with write:packages (classic) or "Contents: read" + "Packages: write"
@@ -67,12 +63,10 @@ concurrency:
 jobs:
   build-push:
     if: |
-      secrets.DOCKERHUB_USERNAME != '' &&
-      secrets.DOCKERHUB_TOKEN != '' &&
-      ((github.event_name == 'pull_request' &&
+      (github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         github.event.pull_request.draft == false) ||
-      (github.event_name == 'workflow_dispatch'))
+      (github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - name: Resolve PR head SHA
@@ -120,6 +114,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -137,6 +132,7 @@ jobs:
         id: meta
         env:
           HEAD_SHA: ${{ steps.head.outputs.sha }}
+          PUSH_DOCKERHUB: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
         run: |
           set -euo pipefail
           SHORT=$(echo "$HEAD_SHA" | cut -c1-7)
@@ -152,9 +148,15 @@ jobs:
           DOCKERHUB_IMG="docker.io/${REPO_LC}"
           GHCR_IMG="ghcr.io/${REPO_LC}"
 
-          TAGS="${DOCKERHUB_IMG}:${DEV_TAG}"$'\n'"${GHCR_IMG}:${DEV_TAG}"
-          TAGS+=$'\n'"${DOCKERHUB_IMG}:dev"
-          TAGS+=$'\n'"${GHCR_IMG}:dev"
+          if [ "${PUSH_DOCKERHUB}" = "true" ]; then
+            TAGS="${DOCKERHUB_IMG}:${DEV_TAG}"$'\n'"${GHCR_IMG}:${DEV_TAG}"
+            TAGS+=$'\n'"${DOCKERHUB_IMG}:dev"
+            TAGS+=$'\n'"${GHCR_IMG}:dev"
+          else
+            TAGS="${GHCR_IMG}:${DEV_TAG}"
+            TAGS+=$'\n'"${GHCR_IMG}:dev"
+            echo '::notice::Docker Hub credentials not set — publishing dev image to GHCR only. Add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN to also push docker.io tags.'
+          fi
 
           REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
           LINK_DH="https://hub.docker.com/r/${REPO_LC}/tags?name=${DEV_TAG}"
@@ -162,6 +164,7 @@ jobs:
 
           echo "dev_tag=${DEV_TAG}" >> "$GITHUB_OUTPUT"
           echo "repo_lc=${REPO_LC}" >> "$GITHUB_OUTPUT"
+          echo "push_dockerhub=${PUSH_DOCKERHUB}" >> "$GITHUB_OUTPUT"
           echo "link_dockerhub=${LINK_DH}" >> "$GITHUB_OUTPUT"
           echo "link_ghcr=${LINK_GHCR}" >> "$GITHUB_OUTPUT"
           {
@@ -185,6 +188,7 @@ jobs:
           HEAD_SHA: ${{ steps.head.outputs.sha }}
           DEV_TAG: ${{ steps.meta.outputs.dev_tag }}
           REPO_LC: ${{ steps.meta.outputs.repo_lc }}
+          PUSH_DOCKERHUB: ${{ steps.meta.outputs.push_dockerhub }}
           LINK_DH: ${{ steps.meta.outputs.link_dockerhub }}
           LINK_GHCR: ${{ steps.meta.outputs.link_ghcr }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -199,23 +203,32 @@ jobs:
             const sha = process.env.HEAD_SHA;
             const devTag = process.env.DEV_TAG;
             const repoLc = process.env.REPO_LC;
+            const pushDh = process.env.PUSH_DOCKERHUB === 'true';
             const linkDh = process.env.LINK_DH;
             const linkGhcr = process.env.LINK_GHCR;
             const runUrl = process.env.RUN_URL;
             const commitUrl = process.env.COMMIT_URL;
             const { owner, repo } = context.repo;
             const short = sha.slice(0, 7);
+            const table = [
+              '| Registry | Pull |',
+              '|----------|------|',
+            ];
+            if (pushDh) {
+              table.push(`| **Docker Hub** | [\`docker.io/${repoLc}:${devTag}\`](${linkDh}) |`);
+            }
+            table.push(`| **GHCR** | [\`ghcr.io/${repoLc}:${devTag}\`](${linkGhcr}) |`);
+            const rolling = pushDh
+              ? `**Unique tag:** \`${devTag}\` — **rolling \`dev\`** (same digest as this build): \`docker.io/${repoLc}:dev\` and \`ghcr.io/${repoLc}:dev\`.`
+              : `**Unique tag:** \`${devTag}\` — **rolling \`dev\` on GHCR:** \`ghcr.io/${repoLc}:dev\` (add \`DOCKERHUB_USERNAME\` + \`DOCKERHUB_TOKEN\` to also publish \`docker.io\`).`;
             const body = [
               '### Dev Docker image',
               '',
               `**Multi-arch** (\`linux/amd64\`, \`linux/arm64\`) for commit [\`${short}\`](${commitUrl})`,
               '',
-              '| Registry | Pull |',
-              '|----------|------|',
-              `| **Docker Hub** | [\`docker.io/${repoLc}:${devTag}\`](${linkDh}) |`,
-              `| **GHCR** | [\`ghcr.io/${repoLc}:${devTag}\`](${linkGhcr}) |`,
+              ...table,
               '',
-              `**Unique tag:** \`${devTag}\` — **rolling \`dev\`** (same digest as this build): \`docker.io/${repoLc}:dev\` and \`ghcr.io/${repoLc}:dev\`.`,
+              rolling,
               '',
               `[Workflow run](${runUrl})`,
             ].join('\n');
