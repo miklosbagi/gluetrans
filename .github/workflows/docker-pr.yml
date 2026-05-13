@@ -16,8 +16,9 @@
 #   DOCKERHUB_USERNAME
 #   DOCKERHUB_TOKEN      (Docker Hub access token / PAT with read & write)
 #
-# If either Docker Hub secret is unset, the build-push job is skipped (configure both to publish
-# dev images to Docker Hub and GHCR).
+# Docker Hub secrets must be set as repository secrets (not only in environments). The job validates
+# them in the first step — do not use secrets.* in job-level `if` (GitHub can skip the job even when
+# secrets exist on same-repo pull_request).
 #
 # GHCR: GitHub forbids *naming* a repo secret GITHUB_* (reserved prefix). Use GH_TOKEN
 # for a PAT with write:packages (classic) or "Contents: read" + "Packages: write"
@@ -66,14 +67,23 @@ concurrency:
 jobs:
   build-push:
     if: |
-      secrets.DOCKERHUB_USERNAME != '' &&
-      secrets.DOCKERHUB_TOKEN != '' &&
-      ((github.event_name == 'pull_request' &&
+      (github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         github.event.pull_request.draft == false) ||
-      (github.event_name == 'workflow_dispatch'))
+      (github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
+      - name: Require Docker Hub repository secrets
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DOCKERHUB_USERNAME}" ] || [ -z "${DOCKERHUB_TOKEN}" ]; then
+            echo '::error::Set repository secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN (Settings → Secrets and variables → Actions). Environment-only secrets are not visible to this workflow unless you add an environment: block.'
+            exit 1
+          fi
+
       - name: Resolve PR head SHA
         id: head
         env:
