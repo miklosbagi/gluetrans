@@ -1,0 +1,123 @@
+# When a PR to main is merged and has one of these labels, create the next semver tag
+# from the latest matching tag on the repo (merge commit is tagged).
+#
+# Labels (create under Issues → Labels if missing):
+#   tag-major → bump major (v1.2.3 → v2.0.0)
+#   tag-minor → bump minor (v1.2.3 → v1.3.0)
+#   tag-patch → bump patch (v1.2.3 → v1.2.4)
+#
+# Precedence if multiple labels: tag-major > tag-minor > tag-patch.
+# If none of these labels are on the merged PR, this workflow does nothing.
+#
+# Tag pushes with GITHUB_TOKEN do not start other workflows. After pushing we dispatch
+# Docker (release) via workflow_dispatch (see docker-release.yml). Optional secret GH_TOKEN
+# can be used for git push if org policy requires a PAT (same pattern as docker-pr.yml).
+#
+# Fork PRs are skipped.
+#
+# Tip: bump repo root VERSION in the same merged PR so dev/release metadata matches the tag.
+# Ported from https://github.com/miklosbagi/jira-zephyr-mcp/blob/main/.github/workflows/pr-label-version-tag.yml
+name: Version tag from PR label
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  tag:
+    if: |
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve version bump from labels
+        id: bump
+        env:
+          LABELS_JSON: ${{ toJson(github.event.pull_request.labels) }}
+        run: |
+          set -euo pipefail
+          BUMP=$(echo "$LABELS_JSON" | jq -r '
+            if any(.[]; .name == "tag-major") then "major"
+            elif any(.[]; .name == "tag-minor") then "minor"
+            elif any(.[]; .name == "tag-patch") then "patch"
+            else empty
+            end
+          ')
+          if [ -z "${BUMP:-}" ]; then
+            echo "No tag-major / tag-minor / tag-patch label — skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout merge commit
+        if: steps.bump.outputs.skip == 'false'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Compute next tag and push
+        if: steps.bump.outputs.skip == 'false'
+        id: tagpush
+        env:
+          BUMP: ${{ steps.bump.outputs.bump }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PUSH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          LATEST=$(git tag -l 'v*.*.*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)
+
+          if [ -z "$LATEST" ]; then
+            case "$BUMP" in
+              major) NEW_TAG=v1.0.0 ;;
+              minor) NEW_TAG=v0.1.0 ;;
+              patch) NEW_TAG=v0.0.1 ;;
+            esac
+          else
+            ver=${LATEST#v}
+            IFS=. read -r maj min pat <<< "$ver"
+            case "$BUMP" in
+              major) NEW_TAG="v$((10#$maj + 1)).0.0" ;;
+              minor) NEW_TAG="v${maj}.$((10#$min + 1)).0" ;;
+              patch) NEW_TAG="v${maj}.${min}.$((10#$pat + 1))" ;;
+            esac
+          fi
+
+          if git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
+            echo "Tag $NEW_TAG already exists — refusing to overwrite."
+            exit 1
+          fi
+
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "$NEW_TAG" -m "chore(release): $NEW_TAG (PR #${PR_NUMBER})"
+
+          git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push origin "$NEW_TAG"
+
+          echo "Created and pushed $NEW_TAG"
+
+      - name: Dispatch Docker (release) workflow
+        if: steps.bump.outputs.skip == 'false' && steps.tagpush.outputs.new_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run docker-release.yml \
+            --repo "${{ github.repository }}" \
+            --ref main \
+            -f tag="${{ steps.tagpush.outputs.new_tag }}"
+          echo "Dispatched Docker (release) for ${{ steps.tagpush.outputs.new_tag }}"
