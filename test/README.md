@@ -22,6 +22,9 @@ Please take a look at the [docker-compose](./docker-compose-build.yaml) file.
 - Shellcheck is used for shell scripts: `shellcheck entrypoint.sh`
 - Hadolint is used for dockerfile: `hadolint Dockerfile`
 
+## Issue #88 — exec environment (`make test-exec-env`)
+No VPN. Builds the image and checks (1) the security unset path for inline `-e` secrets, and (2) that with **only** `GLUETUN_CONTROL_API_KEY_FILE` / `TRANSMISSION_USER_FILE` / `TRANSMISSION_PASS_FILE`, `docker exec … env` does not contain the secret values.
+
 ## Smoke pack
 `make test-run-smoke` (depends on test infrastructure).
 

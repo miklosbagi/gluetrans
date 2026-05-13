@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo 'GlueTrans starting...'
+sleep 5
+
 # GlueTrans: A Gluetun + Transmission + VPN peer port updater
 # Please take a look at https://github.com/miklosbagi/gluetrans for more information.
 # Further recommended reading:
@@ -12,14 +15,22 @@
 # Mandatory env vars, please set these:
 # GLUETUN_CONTROL_ENDPOINT
 # GLUETUN_HEALTH_ENDPOINT
-# GLUETUN_CONTROL_API_KEY
 # TRANSMISSION_ENDPOINT
-# TRANSMISSION_USER
-# TRANSMISSION_PASS
+# Plus either inline or *_FILE (see below):
+#   GLUETUN_CONTROL_API_KEY  OR  GLUETUN_CONTROL_API_KEY_FILE
+#   TRANSMISSION_USER        OR  TRANSMISSION_USER_FILE
+#   TRANSMISSION_PASS        OR  TRANSMISSION_PASS_FILE
 #
 # Optional security/debugging env vars:
 # DEBUG: Set to 1 to keep sensitive env vars visible for debugging (default: 0)
 # SANITIZE_LOGS: Set to 1 to omit sensitive information from logs (default: 0)
+#
+# Secrets and `docker exec … env` (issue #88): many runtimes inject **create-time**
+# container env into `exec` sessions, so values passed as `-e GLUETUN_CONTROL_API_KEY=…`
+# can still appear there even after `unset` in PID 1. To avoid **secret values** in
+# `exec env`, pass only the path variables below (no inline secrets in compose):
+#   GLUETUN_CONTROL_API_KEY_FILE, TRANSMISSION_USER_FILE, TRANSMISSION_PASS_FILE
+#
 # Optional timeouts (issue #89): avoid long blocks when Gluetun/Transmission are slow
 # CURL_API_TIMEOUT: max seconds for curl to Gluetun API and country endpoints (default: 10)
 # RPC_TIMEOUT: max seconds for transmission-remote RPC calls (default: 15)
@@ -48,10 +59,7 @@ transmission_port_fail_count=0
 
 required_vars=(
     GLUETUN_CONTROL_ENDPOINT
-    GLUETUN_CONTROL_API_KEY
     TRANSMISSION_ENDPOINT
-    TRANSMISSION_USER
-    TRANSMISSION_PASS
     GLUETUN_HEALTH_ENDPOINT
 )
 
@@ -167,7 +175,7 @@ pick_new_gluetun_server() {
     wait_for_gluetun
 }
 
-# exit of any env var is unset
+# exit if any required (non-secret) env var is unset
 for var in "${required_vars[@]}"; do
     if [[ -z "${!var}" ]]; then
         echo "$var is not set. please set the environment variable." >&2
@@ -175,27 +183,80 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
-# Store sensitive credentials in memory and remove from environment
-# This prevents them from being visible via 'docker exec <container> env'
-_gluetun_api_key="$GLUETUN_CONTROL_API_KEY"
-_transmission_user="$TRANSMISSION_USER"
-_transmission_pass="$TRANSMISSION_PASS"
-
-# Unset sensitive environment variables (unless DEBUG mode is enabled)
-if [[ "$DEBUG" != "1" ]]; then
+# --- Credentials: load from *_FILE (recommended for issue #88) or inline env ---
+if [[ -n "${GLUETUN_CONTROL_API_KEY_FILE:-}" && -n "${GLUETUN_CONTROL_API_KEY:-}" ]]; then
+    echo "Set only one of GLUETUN_CONTROL_API_KEY or GLUETUN_CONTROL_API_KEY_FILE" >&2
+    exit 1
+fi
+if [[ -n "${GLUETUN_CONTROL_API_KEY_FILE:-}" ]]; then
+    if [[ ! -f "${GLUETUN_CONTROL_API_KEY_FILE}" || ! -r "${GLUETUN_CONTROL_API_KEY_FILE}" ]]; then
+        echo "GLUETUN_CONTROL_API_KEY_FILE is not a readable file" >&2
+        exit 1
+    fi
+    _gluetun_api_key=$(tr -d '\r\n' < "${GLUETUN_CONTROL_API_KEY_FILE}")
+    unset GLUETUN_CONTROL_API_KEY_FILE
+    unset GLUETUN_CONTROL_API_KEY 2>/dev/null || true
+elif [[ -n "${GLUETUN_CONTROL_API_KEY:-}" ]]; then
+    _gluetun_api_key="$GLUETUN_CONTROL_API_KEY"
     unset GLUETUN_CONTROL_API_KEY
+else
+    echo "GLUETUN_CONTROL_API_KEY or GLUETUN_CONTROL_API_KEY_FILE must be set" >&2
+    exit 1
+fi
+
+if [[ -n "${TRANSMISSION_USER_FILE:-}" && -n "${TRANSMISSION_USER:-}" ]]; then
+    echo "Set only one of TRANSMISSION_USER or TRANSMISSION_USER_FILE" >&2
+    exit 1
+fi
+if [[ -n "${TRANSMISSION_USER_FILE:-}" ]]; then
+    if [[ ! -f "${TRANSMISSION_USER_FILE}" || ! -r "${TRANSMISSION_USER_FILE}" ]]; then
+        echo "TRANSMISSION_USER_FILE is not a readable file" >&2
+        exit 1
+    fi
+    _transmission_user=$(tr -d '\r\n' < "${TRANSMISSION_USER_FILE}")
+    unset TRANSMISSION_USER_FILE
+    unset TRANSMISSION_USER 2>/dev/null || true
+elif [[ -n "${TRANSMISSION_USER:-}" ]]; then
+    _transmission_user="$TRANSMISSION_USER"
     unset TRANSMISSION_USER
+else
+    echo "TRANSMISSION_USER or TRANSMISSION_USER_FILE must be set" >&2
+    exit 1
+fi
+
+if [[ -n "${TRANSMISSION_PASS_FILE:-}" && -n "${TRANSMISSION_PASS:-}" ]]; then
+    echo "Set only one of TRANSMISSION_PASS or TRANSMISSION_PASS_FILE" >&2
+    exit 1
+fi
+if [[ -n "${TRANSMISSION_PASS_FILE:-}" ]]; then
+    if [[ ! -f "${TRANSMISSION_PASS_FILE}" || ! -r "${TRANSMISSION_PASS_FILE}" ]]; then
+        echo "TRANSMISSION_PASS_FILE is not a readable file" >&2
+        exit 1
+    fi
+    _transmission_pass=$(tr -d '\r\n' < "${TRANSMISSION_PASS_FILE}")
+    unset TRANSMISSION_PASS_FILE
+    unset TRANSMISSION_PASS 2>/dev/null || true
+elif [[ -n "${TRANSMISSION_PASS:-}" ]]; then
+    _transmission_pass="$TRANSMISSION_PASS"
     unset TRANSMISSION_PASS
+else
+    echo "TRANSMISSION_PASS or TRANSMISSION_PASS_FILE must be set" >&2
+    exit 1
+fi
+
+# Unset / re-export for DEBUG; keep secrets in _vars unless DEBUG=1
+if [[ "$DEBUG" == "1" ]]; then
+    export GLUETUN_CONTROL_API_KEY="$_gluetun_api_key"
+    export TRANSMISSION_USER="$_transmission_user"
+    export TRANSMISSION_PASS="$_transmission_pass"
+    log "debug: DEBUG=1, sensitive environment variables re-exported for visibility"
+else
     log "security: sensitive environment variables removed from environment (stored in memory only)"
-    
-    # Verify the unset worked (for the main script process)
-    if [[ -z "$GLUETUN_CONTROL_API_KEY" ]] && [[ -z "$TRANSMISSION_USER" ]] && [[ -z "$TRANSMISSION_PASS" ]]; then
+    if [[ -z "${GLUETUN_CONTROL_API_KEY:-}" && -z "${TRANSMISSION_USER:-}" && -z "${TRANSMISSION_PASS:-}" ]]; then
         log "security: verified - sensitive vars are not accessible in main process environment"
     else
         log "warning: unset may not have worked as expected"
     fi
-else
-    log "debug: DEBUG=1, keeping sensitive environment variables visible"
 fi
 
 # wait for gluetun to wake up

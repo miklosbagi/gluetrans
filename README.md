@@ -38,13 +38,13 @@ Supported gluetun versions: v3.35 through v3.41.0 (and minor versions), see test
 
 It keeps trying until you have a valid peer port.
 ## Environment variables
-Mandatory:
+Mandatory (each credential: **either** the value variable **or** the corresponding `*_FILE` path — not both):
 - `GLUETUN_CONTROL_ENDPOINT`: Full Control Server URL with port, e.g.: `http://gluetun:8000`.
-- `GLUETUN_CONTROL_API_KEY`: API key for the control server. This is requried from gluetun versions newer than v3.40.0.
+- `GLUETUN_CONTROL_API_KEY` **or** `GLUETUN_CONTROL_API_KEY_FILE`: API key for the control server (required for gluetun newer than v3.40.0). Use the `*_FILE` form with a [Docker secret](https://docs.docker.com/engine/swarm/secrets/) or bind-mounted file so secret **values** are not in container config (see [issue #88](https://github.com/miklosbagi/gluetrans/issues/88); `podman exec … env` can still replay inline `-e` secrets).
 - `GLUETUN_HEALTH_ENDPOINT`: Full Health URL with port, `http://gluetun:9999` by default.
 - `TRANSMISSION_ENDPOINT` : Full Transmission RPC URL with port, service path, e.g.: `http://transmission:9091/transmission/rpc`.
-- `TRANSMISSION_USER`: Username for transmission RPC auth.
-- `TRANSMISSION_PASS`: Password for transmission RPC auth.
+- `TRANSMISSION_USER` **or** `TRANSMISSION_USER_FILE`: Transmission RPC username (or file containing it).
+- `TRANSMISSION_PASS` **or** `TRANSMISSION_PASS_FILE`: Transmission RPC password (or file containing it).
 
 Optional:
 - `PEERPORT_CHECK_INTERVAL`: how often peer port should be validated. Default: 15, in seconds.
