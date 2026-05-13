@@ -16,16 +16,14 @@ Supported gluetun versions: v3.35 through v3.41.0 (and minor versions), see test
 > - **v3.41.0+**: Uses new API (`/v1/portforward`, `/v1/vpn/status`)
 > - **v3.40.0 and older**: Uses old API (`/v1/openvpn/portforwarded`, `/v1/openvpn/status`)
 >
-> The script automatically tries the new endpoint first and falls back to the old one if needed. However, your `config.toml` must match your Gluetun version (see below).
+> The script automatically tries the new endpoint first and falls back to the old one if needed. If you use a **bind-mounted** Gluetun `config.toml` for control auth (Gluetun v3.38–v3.40.0 or fine-grained routes), that file’s routes must match your Gluetun version (see [Gluetun `config.toml`](#gluetun-configtoml-optional)).
 
 > [!WARNING]
 > Breaking change ahead: starting from gluetun 3.40.0+ versions, control server requires authentication. You can read more about this in [gluetun control server documentation](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md#authentication).<br>
-> Gluetrans, from version 0.3.5 and above provides support for this change, but an API key must be provided. Please [consult compose the examples](#docker-compose-examples) and [config.toml example](#gluetun-configtoml) below.<br><br>
-> In short:
-> 1. Set `GLUETUN_CONTROL_API_KEY` in your environment variables.
-> 1. Create a role in gluetun's `config.toml` with the same API key.
-> 1. Map `config.toml` to gluetun container.
-> 1. Set the same API key in gluetrans' environment variables.
+> Gluetrans, from version 0.3.5 and above provides support for this change, but an API key must be provided. The usual setup is:
+> 1. **Gluetun v3.41.0+:** set `HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE` on gluetun (JSON with `"auth":"apikey"` — see [wiki](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md#configuration) and [issue #92](https://github.com/miklosbagi/gluetrans/issues/92)); no `config.toml` mount required for the default case.
+> 2. Set `GLUETUN_CONTROL_API_KEY` on gluetrans to the **same** key.
+> 3. **Gluetun v3.38–v3.40.0:** use a bind-mounted `config.toml` instead (that env var exists only from v3.41.0); see [Docker-compose examples](#docker-compose-examples) and [optional `config.toml`](#gluetun-configtoml-optional).
 
 ## What does it do?
 1. Waits for gluetun to report healthy
@@ -122,9 +120,8 @@ services:
       SERVER_REGIONS: "FI Helsinki,France,Norway,SE Stockholm,Serbia"
       VPN_PORT_FORWARDING: on
       VPN_PORT_FORWARDING_PROVIDER: "private internet access"
-    # from gluetun v3.40.0+ control server auth, mapping config.toml with api key is required
-    volumes:
-      - ./gluetun-config/config.toml:/gluetun/auth/config.toml
+      # Control server API key (Gluetun v3.41.0+); same key as GLUETUN_CONTROL_API_KEY on gluetrans
+      HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE: '{"auth":"apikey","apikey":"secret-apikey-for-gluetrans"}'
     restart: unless-stopped
     # for ubuntu-latest, you may need:
     devices:
@@ -149,8 +146,8 @@ services:
     environment:
       GLUETUN_CONTROL_ENDPOINT: http://localhost:8000
       GLUETUN_HEALTH_ENDPOINT: http://localhost:9999
-      # from gluetun v3.40.0+ control server auth key must be passed
-      GLUETUN_CONTROL_API_KEY: "secret-apikey-for-gluetrans" # must match the one in config.toml
+      # Same API key as Gluetun HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
+      GLUETUN_CONTROL_API_KEY: "secret-apikey-for-gluetrans"
       TRANSMISSION_ENDPOINT: http://localhost:9091/transmission/rpc
       TRANSMISSION_USER: My Transmission Username
       TRANSMISSION_PASS: My Transmission Password
@@ -184,9 +181,7 @@ services:
       SERVER_COUNTRIES: "Romania,Poland,Netherlands,Moldova"
       VPN_PORT_FORWARDING: on
       VPN_PORT_FORWARDING_PROVIDER: "protonvpn"
-    # from gluetun v3.40.0+ control server auth, mapping config.toml with api key is required
-    volumes:
-      - ./gluetun-config/config.toml:/gluetun/auth/config.toml
+      HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE: '{"auth":"apikey","apikey":"secret-apikey-for-gluetrans"}'
     restart: unless-stopped
     # for ubuntu-latest, you may need:
     devices:
@@ -196,15 +191,18 @@ services:
   gluetrans: ....same as with piavpn above...
 ```
 
-Please note that the PIA example above is the reference layout. **CI smoke tests** use **Private Internet Access** with Gluetun; see [`test/docker-compose-build.yaml`](test/docker-compose-build.yaml) and [`test/README.md`](test/README.md) for the exact environment variables.
+Please note that the PIA example above is the reference layout. **CI smoke tests** use **Private Internet Access** with Gluetun; see [`test/docker-compose-build.yaml`](test/docker-compose-build.yaml) (Gluetun v3.41.0+ with `HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE`) or [`test/docker-compose-build-legacy-gluetun.yaml`](test/docker-compose-build-legacy-gluetun.yaml) (v3.38–v3.40.0 with `config.toml`) and [`test/README.md`](test/README.md).
 
-### Gluetun config.toml
-For control server authentication, `config.toml` will be required to allow gluetrans to send authenticated requests to gluetun.
+### Gluetun `config.toml` (optional)
 
-**Choose the config that matches YOUR Gluetun version:**
+**Gluetun v3.41.0 and newer:** you can configure control-server API key auth with **`HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE`** on the gluetun service (JSON string), as in the [compose examples](#docker-compose-examples) above — no bind-mounted `config.toml` is required unless you want [separate roles per route](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md#configuration).
+
+**Gluetun v3.38–v3.40.0:** use a bind-mounted `config.toml` at `/gluetun/auth/config.toml`; the `HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE` environment variable is not available before v3.41.0.
+
+Use the snippet below that matches your Gluetun version’s HTTP routes (Gluetun validates routes at startup).
 
 <details>
-<summary><b>For Gluetun v3.41.0 and newer</b> (new API endpoints)</summary>
+<summary><b>Gluetun v3.41.0 and newer</b> (new API endpoints)</summary>
 
 ```toml
 [[roles]]
@@ -216,7 +214,7 @@ apikey = "secret-apikey-for-gluetrans"
 </details>
 
 <details>
-<summary><b>For Gluetun v3.40.0 and older</b> (old API endpoints)</summary>
+<summary><b>Gluetun v3.40.0 and older</b> (old API endpoints)</summary>
 
 ```toml
 [[roles]]
@@ -227,7 +225,7 @@ apikey = "secret-apikey-for-gluetrans"
 ```
 </details>
 
-**Why separate configs?** Gluetun validates routes at startup and will reject routes that don't exist in that version. The gluetrans script automatically uses the correct endpoints regardless of your config.
+**Why separate configs?** When you use a file instead of `HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE`, Gluetun validates the listed routes at startup. The gluetrans script still picks new vs old HTTP paths automatically; the file must list paths that exist on your Gluetun version.
 
 ## Debug
 `docker logs -f gluetrans` should reveal what's happening.

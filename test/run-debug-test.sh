@@ -3,7 +3,7 @@
 # Test that DEBUG=1 mode works correctly and keeps sensitive vars visible
 
 SERVICE_NAME="gluetrans"
-COMPOSE_FILE="test/docker-compose-build-debug.yaml"
+COMPOSE_FILE="${GLUETRANS_COMPOSE_DEBUG_FILE:-test/docker-compose-build-debug.yaml}"
 
 check_docker_logs() {
     test_name=$1

@@ -9,13 +9,18 @@ Please note that in order to use any of this, the following variables need to be
 These are utilized via [.env](./.env).
 
 ## Test infrastructure
-`make test-env-start` and `make test-env-stop` to start and stop the test environment.
+`make test-env-start` and `make test-env-stop` start and stop the stack defined by `GLUETUN_VERSION`:
+- **Gluetun v3.41.0, `latest`:** [`docker-compose-build.yaml`](./docker-compose-build.yaml) — control API auth via `HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE` (no `config.toml` mount).
+- **Gluetun v3.38, v3.39, v3.40.0:** [`docker-compose-build-legacy-gluetun.yaml`](./docker-compose-build-legacy-gluetun.yaml) — bind-mounted `test/gluetun-config/config.toml` (see [Makefile](../Makefile) `LEGACY_GLUETUN_CONTROL_AUTH`).
+
+The Makefile exports `GLUETRANS_COMPOSE_FILE` / `GLUETRANS_COMPOSE_DEBUG_FILE` for [`run-smoke.sh`](./run-smoke.sh) and [`run-debug-test.sh`](./run-debug-test.sh).
+
 Components:
 - Gluetun (**Private Internet Access** / OpenVPN in CI)
 - Transmisison
 - GlueTrans
 
-Please take a look at the [docker-compose](./docker-compose-build.yaml) file.
+Please take a look at the compose file selected for your `GLUETUN_VERSION` (paths above).
 
 ## Linters
 `make lint`

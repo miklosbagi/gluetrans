@@ -1,3 +1,5 @@
+# Gluetun v3.38–v3.40.0: control server auth via bind-mounted config.toml only
+# (HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE is not available before v3.41.0; see Makefile.)
 services:
   gluetun:
     image: qmcgaw/gluetun:${GLUETUN_VERSION}
@@ -13,7 +15,8 @@ services:
       SERVER_REGIONS: ${TEST_VPN_REGIONS}
       VPN_PORT_FORWARDING: "on"
       VPN_PORT_FORWARDING_PROVIDER: "private internet access"
-      HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE: '{"auth":"apikey","apikey":"secret-apikey-for-gluetrans"}'
+    volumes:
+      - ./gluetun-config/config.toml:/gluetun/auth/config.toml
     restart: unless-stopped
     devices:
       - /dev/net/tun:/dev/net/tun
@@ -34,16 +37,15 @@ services:
       context: ../
     environment:
       GLUETUN_CONTROL_ENDPOINT: http://localhost:8000
-      GLUETUN_CONTROL_API_KEY: "secret-apikey-for-gluetrans" # must match Gluetun HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
+      GLUETUN_CONTROL_API_KEY: "secret-apikey-for-gluetrans" # must match config.toml
       GLUETUN_HEALTH_ENDPOINT: http://localhost:9999
       GLUETUN_PICK_NEW_SERVER_AFTER: 10
       PEERPORT_CHECK_INTERVAL: 30
       TRANSMISSION_ENDPOINT: http://localhost:9091/transmission/rpc
       TRANSMISSION_USER: ${TEST_T_USER}
       TRANSMISSION_PASS: ${TEST_T_PASS}
-      FORCED_COUNTRY_JUMP: 0  # Disable for faster debug test
+      FORCED_COUNTRY_JUMP: 1
       SANITIZE_LOGS: ${SANITIZE_LOGS}
-      DEBUG: 1  # Enable DEBUG mode for this test
     network_mode: "service:gluetun"
     depends_on:
       - gluetun
