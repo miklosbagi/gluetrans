@@ -54,6 +54,8 @@ miklosbagi/gluetrans:latest
 
 ### PIA/ProtonVPN with Gluetun + Transmission
 
+**CI smoke tests** use **Private Internet Access** (see `test/docker-compose-build.yaml`). Full stack example (PIA):
+
 ```yaml
 services:
   gluetun:
@@ -64,12 +66,12 @@ services:
       - 8000:8000 # Control server
       - 9091:9091 # Transmission UI
     environment:
-      VPN_SERVICE_PROVIDER: "protonvpn"  # or "private internet access"
+      VPN_SERVICE_PROVIDER: "private internet access"
       OPENVPN_USER: My OpenVPN Username
       OPENVPN_PASSWORD: My OpenVPN Password
-      SERVER_COUNTRIES: "Romania,Poland,Netherlands"  # or SERVER_REGIONS for PIA
+      SERVER_REGIONS: "Switzerland,DE Berlin,FI Helsinki,France"
       VPN_PORT_FORWARDING: on
-      VPN_PORT_FORWARDING_PROVIDER: "protonvpn"
+      VPN_PORT_FORWARDING_PROVIDER: "private internet access"
     volumes:
       - ./data/gluetun:/gluetun
       - ./gluetun-config/config.toml:/gluetun/auth/config.toml  # Required for v3.40.0+
@@ -106,6 +108,8 @@ services:
     depends_on:
       - gluetun
 ```
+
+For **ProtonVPN**, use `VPN_SERVICE_PROVIDER: "protonvpn"`, **`SERVER_COUNTRIES`** (not `SERVER_REGIONS`), and `VPN_PORT_FORWARDING_PROVIDER: "protonvpn"`. See [Gluetun ProtonVPN setup](https://github.com/qdm12/gluetun-wiki/blob/main/setup/providers/protonvpn.md) and the compose snippet in the [GitHub README](https://github.com/miklosbagi/gluetrans/blob/main/README.md).
 
 ## Gluetun config.toml
 

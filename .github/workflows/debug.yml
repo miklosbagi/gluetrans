@@ -13,6 +13,7 @@ on:
         default: false
 
 env:
+  # PIA OpenVPN + SERVER_REGIONS list (port-forwarding regions); see test/README.md
   GLUETRANS_VPN_USERNAME: ${{ secrets.GLUETRANS_VPN_USERNAME }}
   GLUETRANS_VPN_PASSWORD: ${{ secrets.GLUETRANS_VPN_PASSWORD }}
   GLUETRANS_VPN_REGIONS: ${{ secrets.GLUETRANS_VPN_REGIONS }}

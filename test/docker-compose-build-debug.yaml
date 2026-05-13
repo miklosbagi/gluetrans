@@ -7,12 +7,12 @@ services:
       - 8000:8000
       - 9091:9091
     environment:
-      VPN_SERVICE_PROVIDER: protonvpn
-      OPENVPN_USER: ${TEST_P_USER}
-      OPENVPN_PASSWORD: ${TEST_P_PASS}
-      SERVER_COUNTRIES: ${TEST_P_SVCS}
+      VPN_SERVICE_PROVIDER: "private internet access"
+      OPENVPN_USER: ${TEST_VPN_USER}
+      OPENVPN_PASSWORD: ${TEST_VPN_PASS}
+      SERVER_REGIONS: ${TEST_VPN_REGIONS}
       VPN_PORT_FORWARDING: "on"
-      VPN_PORT_FORWARDING_PROVIDER: protonvpn
+      VPN_PORT_FORWARDING_PROVIDER: "private internet access"
     volumes:
       - ./gluetun-config/config.toml:/gluetun/auth/config.toml
     restart: unless-stopped

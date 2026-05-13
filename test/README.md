@@ -1,8 +1,8 @@
 # GlueTrans Tests
 Please note that in order to use any of this, the following variables need to be exported in the shell:
-- `GLUETRANS_VPN_USERNAME`
-- `GLUETRANS_VPN_PASSWORD`
-- `GLUETRANS_VPN_REGIONS`
+- `GLUETRANS_VPN_USERNAME` — PIA OpenVPN username
+- `GLUETRANS_VPN_PASSWORD` — PIA OpenVPN password
+- `GLUETRANS_VPN_REGIONS` — PIA **`SERVER_REGIONS`** for Gluetun (comma-separated region names as in [Gluetun’s PIA wiki](https://github.com/qdm12/gluetun-wiki/blob/main/setup/providers/private-internet-access.md)); pick regions that support **port forwarding**. Example shape: `Switzerland,DE Berlin,FI Helsinki,France` (adjust to regions you verify work in your account).
 - `GLUETRANS_TRANSMISSION_USERNAME`
 - `GLUETRANS_TRANSMISSION_PASSWORD`
 
@@ -11,7 +11,7 @@ These are utilized via [.env](./.env).
 ## Test infrastructure
 `make test-env-start` and `make test-env-stop` to start and stop the test environment.
 Components:
-- Gluetun
+- Gluetun (**Private Internet Access** / OpenVPN in CI)
 - Transmisison
 - GlueTrans
 
