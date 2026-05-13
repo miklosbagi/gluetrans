@@ -20,6 +20,7 @@ on:
     - cron: '20 5 * * 4'
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 permissions:
   # Require writing security events to upload SARIF file to security tab
@@ -31,12 +32,12 @@ permissions:
 
 jobs:
   scan-scheduled:
-    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     permissions:
       security-events: write
       contents: read
       actions: read
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.9.0"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.5"
     with:
       # Example of specifying custom arguments
       scan-args: |-
@@ -49,7 +50,7 @@ jobs:
       security-events: write
       contents: read
       actions: read
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v1.9.0"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.5"
     with:
       # Example of specifying custom arguments
       scan-args: |-
