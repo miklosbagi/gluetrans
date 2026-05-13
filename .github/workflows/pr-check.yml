@@ -19,6 +19,7 @@ permissions:
   contents: read
 
 env:
+  # PIA OpenVPN credentials + comma-separated SERVER_REGIONS (port-forwarding-capable regions).
   GLUETRANS_VPN_USERNAME: ${{ secrets.GLUETRANS_VPN_USERNAME }}
   GLUETRANS_VPN_PASSWORD: ${{ secrets.GLUETRANS_VPN_PASSWORD }}
   GLUETRANS_VPN_REGIONS: ${{ secrets.GLUETRANS_VPN_REGIONS }}

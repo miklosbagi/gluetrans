@@ -196,7 +196,7 @@ services:
   gluetrans: ....same as with piavpn above...
 ```
 
-Please note that the above is example for piavpn. Nightly tests are running against protonvpn provider, feel free to take a look into the compose file in test for a working example.
+Please note that the PIA example above is the reference layout. **CI smoke tests** use **Private Internet Access** with Gluetun; see [`test/docker-compose-build.yaml`](test/docker-compose-build.yaml) and [`test/README.md`](test/README.md) for the exact environment variables.
 
 ### Gluetun config.toml
 For control server authentication, `config.toml` will be required to allow gluetrans to send authenticated requests to gluetun.
