@@ -17,6 +17,9 @@
 #   DOCKERHUB_USERNAME
 #   DOCKERHUB_TOKEN      (Docker Hub access token / PAT with read & write)
 #
+# If DOCKERHUB_USERNAME or DOCKERHUB_TOKEN is unset, the build-push job is skipped so PR checks
+# still pass; add both secrets to enable dev image pushes.
+#
 # GHCR: GitHub forbids *naming* a repo secret GITHUB_* (reserved prefix). Use GH_TOKEN
 # for a PAT with write:packages (classic) or "Contents: read" + "Packages: write"
 # (fine-grained), scoped to this repo. If GH_TOKEN is unset, login uses github.token
@@ -64,10 +67,12 @@ concurrency:
 jobs:
   build-push:
     if: |
-      (github.event_name == 'pull_request' &&
+      secrets.DOCKERHUB_USERNAME != '' &&
+      secrets.DOCKERHUB_TOKEN != '' &&
+      ((github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         github.event.pull_request.draft == false) ||
-      (github.event_name == 'workflow_dispatch')
+      (github.event_name == 'workflow_dispatch'))
     runs-on: ubuntu-latest
     steps:
       - name: Resolve PR head SHA
