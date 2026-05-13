@@ -103,9 +103,11 @@ wait_for_gluetun() {
 
 # get transmission peer port
 get_transmission_port() {
-    transmission_response=$(timeout "$RPC_TIMEOUT" transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -si | grep Listenport | awk -F' ' '{print $2}')
+    # transmission-remote -si layout: older "Listenport: PORT", newer "Listen port: PORT" (issue #94)
+    transmission_response=$(timeout "$RPC_TIMEOUT" transmission-remote "$TRANSMISSION_ENDPOINT" -n "$_transmission_user":"$_transmission_pass" -si \
+        | awk '/Listen port:/{print $3; exit} /Listenport/{print $2; exit}')
     if [ "$transmission_response" == "" ]; then
-        log "tramsmission returned '$transmission_response', waiting for $gluetun_port to be picked up, retrying ($transmission_port_fail_count / $GLUETUN_PICK_NEW_SERVER_AFTER)...", "s#$gluetun_port#* OMITTED *#g"
+        log "transmission returned '$transmission_response', waiting for $gluetun_port to be picked up, retrying ($transmission_port_fail_count / $GLUETUN_PICK_NEW_SERVER_AFTER)...", "s#$gluetun_port#* OMITTED *#g"
         return 1
     else
         echo "$transmission_response"
