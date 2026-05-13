@@ -1,0 +1,119 @@
+# Production images: semver tag + latest (Docker Hub + GHCR), linux/amd64 + linux/arm64.
+#
+# Triggers:
+#   1) Push a semver git tag (e.g. v0.9.0) — normal release (skips if push was via GITHUB_TOKEN only).
+#   2) workflow_dispatch — enter an existing tag to rebuild/republish.
+#   3) GitHub Release published — uses the release tag (good when you publish a release from the UI).
+#
+# Secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN; optional GH_TOKEN for GHCR (see docker-pr.yml).
+name: Docker (release)
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing semver git tag to build and publish (e.g. v0.8.2). Updates :latest too.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve semver tag
+        id: ver
+        env:
+          # Populated only for workflow_dispatch; empty on tag push (we use GITHUB_REF_NAME).
+          TAG_INPUT: ${{ github.event.inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="$(printf '%s' "$TAG_INPUT" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            if [ -z "$TAG" ]; then
+              echo "::error::Input 'tag' is required."
+              exit 1
+            fi
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="$GITHUB_REF_NAME"
+          fi
+
+          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "release" ]; then
+              echo "::error::Tag must match vMajor.Minor.Patch (got: $TAG)"
+              exit 1
+            fi
+            echo "Tag $TAG is not vMajor.Minor.Patch — skipping image push."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "version_tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Building and publishing $TAG (event: ${{ github.event_name }})"
+
+      - name: Checkout tag
+        if: steps.ver.outputs.skip == 'false'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.ver.outputs.version_tag }}
+
+      - name: Set up QEMU
+        if: steps.ver.outputs.skip == 'false'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: steps.ver.outputs.skip == 'false'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: steps.ver.outputs.skip == 'false'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        if: steps.ver.outputs.skip == 'false'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN || github.token }}
+
+      - name: Compute image tags
+        if: steps.ver.outputs.skip == 'false'
+        id: meta
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version_tag }}"
+          REPO_LC=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          DOCKERHUB_IMG="docker.io/${REPO_LC}"
+          GHCR_IMG="ghcr.io/${REPO_LC}"
+          TAGS="${DOCKERHUB_IMG}:${V}"$'\n'"${GHCR_IMG}:${V}"
+          TAGS+=$'\n'"${DOCKERHUB_IMG}:latest"
+          TAGS+=$'\n'"${GHCR_IMG}:latest"
+          {
+            echo 'tags<<EOF'
+            echo "$TAGS"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        if: steps.ver.outputs.skip == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
