@@ -141,13 +141,13 @@ apikey = "secret-apikey-for-gluetrans"
 
 ## Environment Variables
 
-**Mandatory:**
+**Mandatory:** (credentials: use `*_FILE` paths instead of inline values to avoid secret values in `docker exec … env`; see [issue #88](https://github.com/miklosbagi/gluetrans/issues/88))
 - `GLUETUN_CONTROL_ENDPOINT`: Control Server URL, e.g. `http://gluetun:8000`
-- `GLUETUN_CONTROL_API_KEY`: API key for control server (required for v3.40.0+)
+- `GLUETUN_CONTROL_API_KEY` **or** `GLUETUN_CONTROL_API_KEY_FILE`: API key (required for v3.40.0+)
 - `GLUETUN_HEALTH_ENDPOINT`: Health check URL, e.g. `http://gluetun:9999`
 - `TRANSMISSION_ENDPOINT`: Transmission RPC URL, e.g. `http://transmission:9091/transmission/rpc`
-- `TRANSMISSION_USER`: Transmission RPC username
-- `TRANSMISSION_PASS`: Transmission RPC password
+- `TRANSMISSION_USER` **or** `TRANSMISSION_USER_FILE`: Transmission RPC username
+- `TRANSMISSION_PASS` **or** `TRANSMISSION_PASS_FILE`: Transmission RPC password
 
 **Optional:**
 - `PEERPORT_CHECK_INTERVAL`: Validation interval in seconds (default: 15)

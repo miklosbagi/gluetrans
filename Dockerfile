@@ -1,12 +1,8 @@
 # Use Alpine Linux as the base image
 FROM alpine:3.23.3
 
-# required env vars
-ENV GLUETUN_ENDPOINT=$GLUETUN_ENDPOINT
-ENV TRANSMISSION_ENDPOINT=$TRANSMISSION_ENDPOINT
-ENV TRANSMISSION_USER=$TRANSMISSION_USER
-ENV TRANSMISSION_PASS=$TRANSMISSION_PASS
-ENV PEERPORT_CHECK_INTERVAL=$PEERPORT_CHECK_INTERVAL
+# Runtime configuration is via environment variables only (do not bake ENV placeholders
+# here — empty keys from build-time $VAR expansion show up in `docker exec … env`; see #88).
 
 # install packages
 # hadolint ignore=DL3018
@@ -18,5 +14,7 @@ COPY entrypoint.sh /entrypoint.sh
 # Make the script executable
 RUN chmod +x /entrypoint.sh
 
-# Run the script when the container starts
-CMD ["sh", "-c", "echo 'GlueTrans starting...'; sleep 5; /entrypoint.sh"]
+# Bash as PID 1 runs entrypoint in-process so unset removes secrets from init environ.
+# See issue #88; `docker exec … env` may still replay create-time `-e` secrets unless
+# you use *_FILE env vars (no secret values in container config).
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
