@@ -1,3 +1,4 @@
+# Used by CI for Gluetun v3.38–v3.40.0 (bind-mounted config.toml; see Makefile LEGACY_GLUETUN_CONTROL_AUTH).
 [[roles]]
 name = "gluetrans"
 routes = ["GET /v1/openvpn/portforwarded", "GET /v1/openvpn/status", "PUT /v1/openvpn/status"]

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SERVICE_NAME="gluetrans" # as in docker-compose.yml
-COMPOSE_FILE="test/docker-compose-build.yaml"
+COMPOSE_FILE="${GLUETRANS_COMPOSE_FILE:-test/docker-compose-build.yaml}"
 
 check_docker_logs() {
     test_name=$1
